@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PTE Study Planner</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+// Firebase SDK loaded - init will happen after page scripts load
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#7C3AED; --blue-l:#F5F3FF; --blue-m:#EDE9FE;
+  --bg:#FAF8FF; --bg2:#F3F0FF; --card:#fff;
+  --border:#E4DEFF; --border2:#C4B5FD;
+  --text:#1E1035; --text2:#4C3D75; --muted:#9181B8;
+  --green:#059669; --green-r:#10B981; --green-bg:#ECFDF5;
+  --yellow:#D97706; --yellow-bg:#FFFBEB;
+  --orange:#EA580C; --orange-bg:#FFF7ED; --orange-b:#FED7AA;
+  --red:#EF4444; --red-bg:#FEF2F2;
+  --purple:#7C3AED; --purple-bg:#F5F3FF;
+  --accent:#A855F7; --accent2:#6D28D9;
+  --grad:linear-gradient(135deg,#7C3AED,#A855F7);
+  --grad2:linear-gradient(135deg,#6D28D9,#7C3AED,#A855F7);
+  --sh-sm:0 1px 3px rgba(124,58,237,.1); --sh:0 4px 16px rgba(124,58,237,.12);
+  --sh-lg:0 10px 40px rgba(124,58,237,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5;}
+.container{max-width:1240px;margin:0 auto;padding:0 20px;}
+
+/* HEADER */
+header{background:var(--grad2);border-bottom:none;padding:16px 0;position:sticky;top:0;z-index:200;box-shadow:0 4px 20px rgba(124,58,237,.35);}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.hd-title h1{font-size:19px;font-weight:800;letter-spacing:-.3px;color:white;}
+.hd-title span{font-size:12px;color:rgba(255,255,255,.7);display:block;margin-top:1px;}
+.hd-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.stat-pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:5px 13px;text-align:center;min-width:60px;backdrop-filter:blur(8px);}
+.stat-pill .v{font-size:16px;font-weight:800;color:white;line-height:1;display:block;}
+.stat-pill .l{font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
+.clock-wrap{font-size:13px;color:rgba(255,255,255,.85);display:flex;align-items:center;gap:5px;font-weight:600;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(16,185,129,.25);animation:pulse 2s ease infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* NAV TABS */
+.nav-tabs{display:flex;gap:4px;padding:16px 0 0;}
+.tab-btn{padding:9px 18px;border:none;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;border-radius:10px 10px 0 0;border-bottom:2px solid transparent;transition:all .18s;}
+.tab-btn:hover{color:var(--text2);background:var(--bg2);}
+.tab-btn.active{color:var(--purple);border-bottom-color:var(--purple);background:var(--card);font-weight:800;}
+.tab-panel{display:none;padding:20px 0 40px;}
+.tab-panel.active{display:block;}
+
+/* DAY SELECTOR */
+.day-selector{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.day-btn{flex:1;min-width:86px;padding:11px 8px 10px;border:1.5px solid var(--border);background:var(--card);border-radius:12px;color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;text-align:center;position:relative;overflow:hidden;box-shadow:var(--sh-sm);}
+.day-btn .dn{font-size:11px;font-weight:500;color:var(--muted);margin-top:2px;}
+.day-btn:hover{border-color:var(--purple);color:var(--purple);background:var(--blue-l);transform:translateY(-1px);box-shadow:var(--sh);}
+.day-btn.active{border-color:var(--purple);background:var(--grad);color:white;box-shadow:0 4px 18px rgba(124,58,237,.4);}
+.day-btn.active .dn{color:rgba(255,255,255,.7);}
+.day-btn.today:not(.active)::after{content:'';position:absolute;top:6px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--green);}
+.day-btn .pb{position:absolute;bottom:0;left:0;height:3px;background:var(--green);transition:width .3s;border-radius:0 2px 2px 0;}
+.day-btn.active .pb{background:rgba(255,255,255,.5);}
+.day-btn.has-note .dn::after{content:' ✏️';font-size:9px;}
+
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:1fr 310px;gap:18px;align-items:start;}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr;}}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--sh);}
+.card-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);}
+.card-hdr h2{font-size:14px;font-weight:700;}
+.done-badge{font-size:12px;font-weight:600;color:var(--text2);background:var(--card);border:1px solid var(--border);border-radius:100px;padding:3px 10px;}
+
+.session-lbl{font-size:11px;padding:3px 10px;border-radius:100px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;}
+.sm{background:linear-gradient(135deg,#FEF3C7,#FDE68A);color:#92400E;border:1px solid #F59E0B;font-size:12px;padding:6px 16px;box-shadow:0 2px 10px rgba(245,158,11,.25);}
+.se{background:linear-gradient(135deg,#EDE9FE,#DDD6FE);color:#4C1D95;border:1px solid #8B5CF6;font-size:12px;padding:6px 16px;box-shadow:0 2px 10px rgba(124,58,237,.25);}
+
+.task-section{padding:8px 0;}
+.s-morning{background:transparent;}
+.s-evening{background:transparent;}
+.sec-title{padding:12px 20px 8px;display:flex;align-items:center;gap:10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);}
+.sec-title::after{content:'';flex:1;height:2px;background:linear-gradient(to right,var(--border2),transparent);border-radius:2px;}
+
+/* TASK */
+.task-item{}
+.task-row{display:flex;align-items:center;padding:11px 20px;gap:11px;cursor:pointer;transition:background .12s;}
+.task-row:hover{background:var(--bg);}
+.chk{width:20px;height:20px;border:2px solid var(--border2);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s;background:white;}
+.chk::after{content:'✓';font-size:12px;font-weight:800;color:white;opacity:0;transition:opacity .18s;}
+.task-item.done .chk{background:var(--grad);border-color:var(--purple);box-shadow:0 0 0 3px rgba(124,58,237,.2);}
+.task-item.done .chk::after{opacity:1;}
+.ti{flex:1;min-width:0;}
+.tn{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tn.star{color:var(--blue);}
+.task-item.done .tn{color:var(--muted);text-decoration:line-through;font-weight:400;}
+.task-item.done .tn.star{color:var(--muted);}
+.tm{font-size:12px;color:var(--muted);margin-top:2px;display:flex;gap:7px;align-items:center;}
+.badge{font-size:11px;padding:1px 7px;border-radius:5px;background:var(--bg2);color:var(--text2);font-weight:500;border:1px solid var(--border);}
+
+/* NOTE BTN */
+.note-btn{background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:5px 9px;transition:all .16s;flex-shrink:0;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;gap:3px;white-space:nowrap;}
+.note-btn:hover{border-color:var(--orange);color:var(--orange);background:var(--orange-bg);}
+.note-btn.has-note{border-color:var(--orange-b);color:var(--orange);background:var(--orange-bg);}
+
+/* NOTE AREA */
+.task-note-area{max-height:0;overflow:hidden;transition:max-height .32s ease;}
+.task-note-area.open{max-height:150px;}
+.task-note-inner{padding:4px 20px 12px 51px;}
+.niw{display:flex;gap:8px;align-items:flex-start;}
+.note-ta{flex:1;background:var(--orange-bg);border:1.5px solid var(--orange-b);border-radius:10px;padding:9px 12px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;resize:none;outline:none;min-height:60px;line-height:1.5;transition:border-color .2s;}
+.note-ta::placeholder{color:var(--muted);font-style:italic;}
+.note-ta:focus{border-color:var(--orange);}
+.nsave{background:var(--orange);border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:8px 11px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;transition:all .18s;}
+.nsave:hover{background:#C2410C;}
+.saved-note{font-size:13px;color:var(--orange);background:var(--orange-bg);border:1.5px solid var(--orange-b);border-radius:10px;padding:9px 12px;line-height:1.5;display:flex;gap:8px;align-items:flex-start;font-weight:500;}
+.saved-note .nact{display:flex;gap:6px;flex-shrink:0;}
+.nedit,.ndel{background:none;border:none;font-size:11px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;padding:0;text-decoration:underline;transition:color .15s;}
+.nedit{color:var(--text2);}.nedit:hover{color:var(--orange);}
+.ndel{color:var(--muted);}.ndel:hover{color:var(--red);}
+
+/* DAY NOTE */
+.day-note-sec{padding:16px 20px 20px;border-top:1px solid var(--border);background:var(--bg);}
+.day-note-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:10px;}
+.day-note-ta{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;resize:none;outline:none;min-height:70px;line-height:1.6;transition:border-color .2s;}
+.day-note-ta:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+.day-note-ta::placeholder{color:var(--muted);font-style:italic;}
+.day-note-foot{display:flex;justify-content:flex-end;margin-top:10px;}
+.btn-save-day{background:var(--blue);border:none;color:white;border-radius:8px;padding:7px 16px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s;}
+.btn-save-day:hover{background:#1D4ED8;box-shadow:0 2px 8px rgba(37,99,235,.3);}
+
+/* ADD TASK PANEL */
+.add-task-btn{display:flex;align-items:center;gap:7px;width:100%;padding:11px 20px;background:none;border:none;border-top:1px solid var(--border);color:var(--blue);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;}
+.add-task-btn:hover{background:var(--blue-l);}
+.add-task-form{padding:14px 20px;border-top:1px solid var(--border);background:var(--blue-l);display:none;}
+.add-task-form.open{display:block;}
+.atf-grid{display:grid;grid-template-columns:1fr 100px 80px;gap:8px;margin-bottom:10px;}
+.atf-input{background:white;border:1.5px solid var(--border);border-radius:9px;padding:8px 12px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;outline:none;width:100%;font-weight:500;transition:border-color .18s;}
+.atf-input:focus{border-color:var(--blue);}
+.atf-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.atf-sel{background:white;border:1.5px solid var(--border);border-radius:9px;padding:8px 10px;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;outline:none;font-weight:500;flex:1;transition:border-color .18s;}
+.atf-sel:focus{border-color:var(--blue);}
+.atf-chk-lbl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;}
+.atf-chk-lbl input{accent-color:var(--blue);width:15px;height:15px;}
+.atf-actions{display:flex;gap:8px;}
+.btn-atf-add{background:var(--blue);border:none;color:white;border-radius:8px;padding:8px 16px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;}
+.btn-atf-add:hover{background:#1D4ED8;}
+.btn-atf-cancel{background:none;border:1.5px solid var(--border);color:var(--text2);border-radius:8px;padding:8px 14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-atf-cancel:hover{background:white;}
+
+/* CUSTOM task delete */
+.task-del-btn{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:3px 5px;transition:color .15s;flex-shrink:0;}
+.task-del-btn:hover{color:var(--red);}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;gap:16px;}
+.w-hdr{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:7px;background:var(--bg2);}
+.w-hdr-left{display:flex;align-items:center;gap:7px;}
+.w-body{padding:16px;}
+
+/* PROGRESS RING */
+.prog-widget{padding:20px;text-align:center;}
+.ring-wrap{position:relative;width:110px;height:110px;margin:0 auto 14px;}
+.ring-wrap svg{transform:rotate(-90deg);width:110px;height:110px;}
+.rbg{fill:none;stroke:var(--border);stroke-width:9;}
+.rfill{fill:none;stroke:var(--green-r);stroke-width:9;stroke-linecap:round;stroke-dasharray:283;stroke-dashoffset:283;transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 0 6px rgba(16,185,129,.35));}
+.rt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.rpct{font-size:26px;font-weight:800;color:var(--green);line-height:1;}
+.rsub{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500;}
+.prog-lbl{font-size:13px;color:var(--text2);font-weight:500;}
+.prog-lbl strong{color:var(--text);}
+
+/* WEEK BARS */
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:14px;}
+.wdm{text-align:center;}
+.wlbl{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:5px;letter-spacing:.5px;}
+.wbw{height:56px;background:var(--bg2);border-radius:6px;overflow:hidden;display:flex;align-items:flex-end;border:1px solid var(--border);}
+.wb{width:100%;background:var(--grad);border-radius:5px;transition:height .5s ease;}
+.wpct{font-size:10px;color:var(--muted);margin-top:4px;font-weight:600;}
+
+/* STATS TAB */
+.stats-wrap{display:flex;flex-direction:column;gap:20px;}
+.stats-header{display:flex;gap:10px;flex-wrap:wrap;}
+.stats-period-btn{padding:7px 16px;border:1.5px solid var(--border);background:var(--card);border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;transition:all .18s;}
+.stats-period-btn:hover{border-color:var(--blue);color:var(--blue);}
+.stats-period-btn.active{background:var(--blue);color:white;border-color:var(--blue);}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}
+.stats-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--sh-sm);}
+.stats-card .sc-icon{font-size:24px;margin-bottom:8px;}
+.stats-card .sc-val{font-size:28px;font-weight:800;color:var(--blue);line-height:1;}
+.stats-card .sc-lbl{font-size:13px;color:var(--text2);margin-top:4px;font-weight:500;}
+.stats-card .sc-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--sh);}
+.chart-card h3{font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text);}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;}
+.bc-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bc-bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end;background:var(--bg2);border-radius:6px;overflow:hidden;border:1px solid var(--border);}
+.bc-bar{width:100%;background:var(--grad);border-radius:5px;transition:height .6s ease;min-height:0;}
+.bc-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+.bc-val{font-size:10px;font-weight:700;color:var(--text2);}
+.top-tasks{display:flex;flex-direction:column;gap:10px;}
+.top-task-row{display:flex;align-items:center;gap:10px;}
+.tt-rank{width:22px;height:22px;border-radius:50%;background:var(--blue);color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tt-info{flex:1;}
+.tt-name{font-size:13px;font-weight:600;color:var(--text);}
+.tt-bar-wrap{height:6px;background:var(--bg2);border-radius:3px;margin-top:3px;overflow:hidden;}
+.tt-bar{height:100%;background:var(--green-r);border-radius:3px;transition:width .5s ease;}
+.tt-pct{font-size:12px;font-weight:700;color:var(--blue);flex-shrink:0;}
+
+/* NOTES LIST */
+.notes-list{display:flex;flex-direction:column;gap:8px;}
+.note-entry{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .16s;}
+.note-entry:hover{border-color:var(--orange);background:var(--orange-bg);}
+.neh{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.ne-tag{font-size:11px;font-weight:700;color:var(--blue);background:var(--blue-l);border:1px solid var(--blue-m);padding:2px 8px;border-radius:5px;}
+.ne-lbl{font-size:11px;color:var(--muted);font-weight:500;}
+.ne-prev{font-size:12px;color:var(--text2);line-height:1.5;}
+.no-notes{text-align:center;padding:20px;color:var(--muted);font-size:12px;line-height:1.7;}
+
+/* EMAIL */
+
+
+/* SOUND TOGGLE */
+.sound-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--border);margin-top:4px;}
+.sound-lbl{font-size:13px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:7px;}
+.toggle{position:relative;width:40px;height:22px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border2);border-radius:11px;transition:background .2s;}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;top:3px;left:3px;background:white;border-radius:50%;transition:transform .2s;box-shadow:var(--sh-sm);}
+.toggle input:checked+.toggle-slider{background:var(--green);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(18px);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:white;border:1px solid var(--border);border-left:4px solid var(--green);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh-lg);transform:translateY(100px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:9999;max-width:300px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.ti{font-size:18px;}
+.tt{font-size:13px;font-weight:700;color:var(--text);}
+.tm{font-size:12px;color:var(--text2);margin-top:1px;}
+
+/* EMPTY */
+.empty-day{padding:48px 24px;text-align:center;}
+.empty-day .ei{font-size:40px;margin-bottom:12px;}
+.empty-day h3{font-size:16px;font-weight:700;}
+.empty-day p{font-size:13px;color:var(--muted);margin-top:6px;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.ani{animation:fadeUp .3s ease both;}
+
+/* POMODORO */
+.pomo-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--sh);}
+.pomo-hdr{padding:13px 16px;background:var(--grad2);display:flex;align-items:center;justify-content:space-between;}
+.pomo-hdr-title{font-size:13px;font-weight:800;color:white;letter-spacing:.3px;}
+.pomo-mode-btns{display:flex;gap:4px;}
+.pomo-mode-btn{padding:4px 10px;border:1.5px solid rgba(255,255,255,.3);background:transparent;border-radius:20px;color:rgba(255,255,255,.7);font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;}
+.pomo-mode-btn.pomo-active{background:white;color:var(--purple);border-color:white;}
+.pomo-body{padding:20px 16px 16px;text-align:center;}
+.pomo-ring-wrap{position:relative;width:130px;height:130px;margin:0 auto 14px;}
+.pomo-ring-wrap svg{transform:rotate(-90deg);width:130px;height:130px;}
+.pomo-ring-bg{fill:none;stroke:var(--border);stroke-width:8;}
+.pomo-ring-fill{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;stroke-dasharray:345;stroke-dashoffset:0;transition:stroke-dashoffset .5s ease;}
+.pomo-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.pomo-time{font-size:28px;font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1;}
+.pomo-sublabel{font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;letter-spacing:.5px;}
+.pomo-task-lbl{font-size:12px;color:var(--purple);font-weight:700;margin-bottom:12px;background:var(--blue-l);border-radius:20px;padding:4px 12px;display:inline-block;max-width:95%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pomo-btns{display:flex;gap:8px;justify-content:center;margin-bottom:10px;}
+.pomo-btn-start{padding:9px 20px;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;background:var(--grad);color:white;box-shadow:0 4px 12px rgba(124,58,237,.35);}
+.pomo-btn-start:hover{background:var(--grad2);transform:translateY(-1px);}
+.pomo-btn-reset{padding:9px 16px;border:1.5px solid var(--border);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;background:var(--bg2);color:var(--text2);}
+.pomo-btn-reset:hover{border-color:var(--border2);background:white;}
+.pomo-session-info{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px;}
+.pomo-session-info span{color:var(--purple);font-weight:800;}
+.pomo-dots{display:flex;gap:5px;justify-content:center;}
+.pomo-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:all .3s;}
+.pomo-dot.pdone{background:var(--accent);box-shadow:0 0 0 2px rgba(124,58,237,.2);}
+.pomo-dot.pcurrent{background:var(--purple);transform:scale(1.3);}
+/* DIFFICULTY */
+.diff-wrap{display:flex;align-items:center;gap:3px;flex-shrink:0;}
+.diff-star{background:none;border:none;font-size:13px;cursor:pointer;padding:1px;transition:transform .15s;line-height:1;opacity:.3;}
+.diff-star:hover,.diff-star.don{opacity:1;transform:scale(1.2);}
+.diff-lbl{font-size:10px;font-weight:700;border-radius:5px;padding:2px 6px;margin-left:2px;}
+.diff-e{background:#ECFDF5;color:#059669;}
+.diff-m{background:#FFFBEB;color:#D97706;}
+.diff-h{background:#FEF2F2;color:#EF4444;}
+/* POMO task btn */
+.pomo-task-btn{background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;padding:4px 7px;transition:all .16s;flex-shrink:0;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;}
+.pomo-task-btn:hover{border-color:var(--purple);color:var(--purple);background:var(--blue-l);}
+/* CARD header */
+.card-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,var(--bg2),var(--blue-l));}
+.done-badge{font-size:12px;font-weight:700;color:var(--purple);background:var(--blue-l);border:1.5px solid var(--blue-m);border-radius:100px;padding:3px 12px;}
+/* SUGGESTIONS */
+.suggest-list{display:flex;flex-direction:column;gap:8px;padding:14px 16px;}
+.suggest-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);transition:all .2s;}
+.suggest-item:hover{border-color:var(--border2);background:var(--blue-l);transform:translateX(3px);}
+.sug-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.sug-ttl{font-size:13px;font-weight:700;color:var(--text);}
+.sug-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5;}
+.sug-tag{font-size:10px;font-weight:700;border-radius:5px;padding:2px 7px;margin-top:4px;display:inline-block;}
+.tag-hot{background:#FEF2F2;color:#EF4444;}
+.tag-new{background:#F5F3FF;color:#7C3AED;}
+.tag-plan{background:#FFFBEB;color:#D97706;}
+/* body bg */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 0% 0%,rgba(124,58,237,.05) 0%,transparent 55%),radial-gradient(ellipse at 100% 100%,rgba(168,85,247,.06) 0%,transparent 55%);pointer-events:none;z-index:0;}
+.container{position:relative;z-index:1;}
+/* task row border accent */
+.task-row{display:flex;align-items:center;padding:11px 20px;gap:11px;cursor:pointer;transition:all .12s;border-left:3px solid transparent;}
+.task-item.done .task-row{border-left-color:var(--green);}
+.task-item .task-row:hover{border-left-color:var(--border2);background:var(--bg);}
+
+.sync-indicator{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.8);font-weight:600;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#FCD34D;transition:background .4s;}
+.sync-dot.ok{background:#10B981;}
+.history-wrap{display:flex;flex-direction:column;gap:20px;}
+.month-nav{display:flex;align-items:center;gap:10px;}
+.month-nav-btn{background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:6px 14px;font-family:"Plus Jakarta Sans",sans-serif;font-size:15px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .18s;}
+.month-nav-btn:hover{border-color:var(--purple);color:var(--purple);}
+.month-label{font-size:16px;font-weight:800;color:var(--text);min-width:150px;text-align:center;}
+.history-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.cal-header{text-align:center;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:6px 0;}
+.cal-day{border:1.5px solid var(--border);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;transition:all .18s;background:var(--card);min-height:60px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.cal-day:hover{border-color:var(--purple);background:var(--blue-l);transform:translateY(-1px);}
+.cal-day.empty{border-color:transparent;background:transparent;cursor:default;pointer-events:none;}
+.cal-day.today{border-color:var(--purple);box-shadow:0 0 0 2px rgba(124,58,237,.2);}
+.cal-day.selected{background:var(--grad);border-color:var(--purple);}
+.cal-day.selected .cal-dn,.cal-day.selected .cal-pct{color:white!important;}
+.cal-dn{font-size:13px;font-weight:800;color:var(--text);}
+.cal-pct{font-size:10px;font-weight:600;color:var(--muted);}
+.cal-dots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;max-width:34px;}
+.cal-dot{width:5px;height:5px;border-radius:50%;}
+.cal-dot.done{background:var(--green);}
+.cal-dot.undone{background:var(--border2);}
+.cal-day.full .cal-dn{color:var(--green);}
+.history-detail{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--sh);}
+.hdet-hdr{padding:14px 20px;background:linear-gradient(135deg,var(--bg2),var(--blue-l));border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.hdet-hdr h3{font-size:14px;font-weight:800;}
+.hdet-badge{font-size:12px;font-weight:700;padding:3px 12px;border-radius:100px;}
+.hdet-badge.full{background:#ECFDF5;color:#059669;border:1px solid #6EE7B7;}
+.hdet-badge.partial{background:#FFFBEB;color:#D97706;border:1px solid #FDE68A;}
+.hdet-badge.none{background:var(--bg2);color:var(--muted);border:1px solid var(--border);}
+.hist-session-lbl{padding:8px 20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);background:var(--bg2);}
+.hist-task-row{display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--border);}
+.hist-task-row:last-child{border-bottom:none;}
+.hist-chk{width:18px;height:18px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
+.hist-chk.done{background:var(--grad);color:white;}
+.hist-chk.undone{background:var(--bg2);border:1.5px solid var(--border);}
+.hist-name{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.hist-name.done{color:var(--muted);text-decoration:line-through;font-weight:400;}
+.hist-note-tag{font-size:11px;color:var(--orange);background:var(--orange-bg);border:1px solid var(--orange-b);border-radius:6px;padding:2px 8px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.no-history{padding:40px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8;}
+
+/* ===== TASK TIMER ===== */
+.task-timer-wrap{display:flex;align-items:center;gap:6px;padding:6px 20px 10px 51px;background:var(--bg);border-top:1px dashed var(--border);}
+.task-timer-wrap.hidden{display:none;}
+.timer-display{font-size:22px;font-weight:800;color:var(--purple);letter-spacing:-1px;min-width:58px;text-align:center;font-variant-numeric:tabular-nums;}
+.timer-display.urgent{color:var(--red);animation:timerPulse .5s ease infinite;}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.timer-input{width:52px;background:var(--bg2);border:1.5px solid var(--border);border-radius:7px;padding:4px 6px;font-family:"Plus Jakarta Sans",sans-serif;font-size:13px;font-weight:700;color:var(--text);text-align:center;outline:none;}
+.timer-input:focus{border-color:var(--purple);}
+.timer-sep{font-size:14px;font-weight:800;color:var(--muted);}
+.timer-progress{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin:0 4px;}
+.timer-progress-bar{height:100%;background:var(--grad);border-radius:3px;transition:width .5s linear;}
+.timer-progress-bar.urgent{background:linear-gradient(135deg,#EF4444,#F87171);}
+.btn-timer{border:none;border-radius:8px;font-family:"Plus Jakarta Sans",sans-serif;font-size:12px;font-weight:700;cursor:pointer;padding:5px 10px;transition:all .18s;white-space:nowrap;}
+.btn-timer-start{background:var(--grad);color:white;}
+.btn-timer-start:hover{opacity:.85;}
+.btn-timer-pause{background:var(--yellow-bg);color:var(--yellow);border:1.5px solid #FDE68A;}
+.btn-timer-reset{background:var(--bg2);color:var(--muted);border:1.5px solid var(--border);}
+.btn-timer-reset:hover{color:var(--red);border-color:var(--red);}
+.task-timer-btn{background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;padding:4px 8px;transition:all .16s;flex-shrink:0;font-family:"Plus Jakarta Sans",sans-serif;white-space:nowrap;}
+.task-timer-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+.task-timer-btn.active{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+.task-item.timing .task-row{border-left-color:var(--green)!important;}
+
+/* ===== VOCAB TAB ===== */
+.vocab-wrap{display:flex;flex-direction:column;gap:20px;max-width:800px;}
+.vocab-add-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--sh);}
+.vocab-add-card h3{font-size:14px;font-weight:800;color:var(--text);margin-bottom:14px;}
+.vocab-add-row{display:flex;gap:10px;align-items:center;}
+.vocab-input{flex:1;background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-family:"Plus Jakarta Sans",sans-serif;font-size:14px;font-weight:600;color:var(--text);outline:none;transition:border-color .2s;}
+.vocab-input:focus{border-color:var(--purple);background:white;}
+.vocab-input::placeholder{color:var(--muted);font-weight:400;}
+.btn-vocab-add{background:var(--grad);border:none;border-radius:10px;color:white;font-family:"Plus Jakarta Sans",sans-serif;font-size:13px;font-weight:700;padding:10px 20px;cursor:pointer;white-space:nowrap;transition:opacity .18s;}
+.btn-vocab-add:hover{opacity:.85;}
+.vocab-search{width:100%;background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:9px 14px;font-family:"Plus Jakarta Sans",sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .2s;margin-bottom:4px;}
+.vocab-search:focus{border-color:var(--purple);}
+.vocab-list-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--sh);}
+.vocab-list-hdr{padding:14px 20px;background:linear-gradient(135deg,var(--bg2),var(--blue-l));border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.vocab-list-hdr h3{font-size:14px;font-weight:800;}
+.vocab-count{font-size:12px;font-weight:700;color:var(--purple);background:var(--blue-l);border:1.5px solid var(--blue-m);border-radius:100px;padding:3px 12px;}
+.vocab-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background .15s;}
+.vocab-item:last-child{border-bottom:none;}
+.vocab-item:hover{background:var(--bg);}
+.vocab-word{font-size:15px;font-weight:700;color:var(--text);flex:1;}
+.vocab-date{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap;}
+.vocab-del{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:3px 6px;border-radius:6px;transition:all .15s;}
+.vocab-del:hover{color:var(--red);background:var(--red-bg);}
+.vocab-ipa-input{font-family:"Plus Jakarta Sans",sans-serif;font-style:italic;color:var(--purple)!important;}
+.vocab-col-hdr{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 80px 36px;gap:8px;padding:8px 20px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+.vocab-item{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 80px 36px;gap:8px;align-items:center;padding:11px 20px;border-bottom:1px solid var(--border);transition:background .15s;}
+.vocab-item:last-child{border-bottom:none;}
+.vocab-item:hover{background:var(--bg);}
+.vocab-word{font-size:14px;font-weight:700;color:var(--text);}
+.vocab-ipa{font-size:13px;color:var(--purple);font-style:italic;font-weight:500;}
+.vocab-ipa.empty{color:var(--border2);font-style:normal;}
+.vocab-meaning{font-size:13px;color:var(--text2);font-weight:500;}
+.vocab-meaning.loading{color:var(--muted);font-style:italic;}
+.vocab-meaning.empty{color:var(--border2);}
+.vocab-date{font-size:11px;color:var(--muted);font-weight:500;}
+.vocab-del{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:3px 6px;border-radius:6px;transition:all .15s;justify-self:center;}
+.vocab-del:hover{color:var(--red);background:var(--red-bg);}
+.vocab-empty{padding:48px 24px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8;}
+.vocab-empty .ve-icon{font-size:36px;margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="hd">
+      <div class="hd-title">
+        <h1>🎯 ORANGE CỐ LÊN</h1>
+        <span>Vì tương lai tươi sáng</span>
+      </div>
+      <div class="hd-right">
+        <div class="stat-pill"><span class="v" id="statDone">0</span><span class="l">Bài xong</span></div>
+        <div class="stat-pill"><span class="v" id="statStreak">0</span><span class="l">Streak 🔥</span></div>
+        <div class="stat-pill"><span class="v" id="statNotes">0</span><span class="l">Ghi chú ✏️</span></div>
+        <div class="clock-wrap"><div class="dot"></div><span id="clock"></span></div>
+        <div class="sync-indicator"><div class="sync-dot" id="syncDot"></div><span id="syncLabel">Đang kết nối…</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('planner',this)">📋 Lịch học</button>
+    <button class="tab-btn" onclick="switchTab('stats',this)">📈 Thống kê</button>
+    <button class="tab-btn" onclick="switchTab('history',this)">📅 Lịch sử</button>
+    <button class="tab-btn" onclick="switchTab('vocab',this)">📖 Vocab</button>
+  </div>
+
+  <!-- PLANNER TAB -->
+  <div class="tab-panel active" id="tab-planner">
+    <div class="day-selector ani" id="daySelector"></div>
+    <div class="main-grid">
+      <div>
+        <div class="card ani" id="scheduleCard"></div>
+      </div>
+      <div class="sidebar">
+
+        <div class="card ani">
+          <div class="w-hdr"><div class="w-hdr-left">📊 Tiến độ hôm nay</div></div>
+          <div class="prog-widget">
+            <div class="ring-wrap">
+              <svg viewBox="0 0 110 110">
+                <circle class="rbg" cx="55" cy="55" r="45"/>
+                <circle class="rfill" id="progRing" cx="55" cy="55" r="45"/>
+              </svg>
+              <div class="rt">
+                <span class="rpct" id="progPct">0%</span>
+                <span class="rsub">hoàn thành</span>
+              </div>
+            </div>
+            <div class="prog-lbl"><strong id="cntDone">0</strong> / <strong id="cntTotal">0</strong> nhiệm vụ</div>
+          </div>
+        </div>
+
+        <div class="card ani">
+          <div class="w-hdr"><div class="w-hdr-left">📅 Tổng quan tuần</div></div>
+          <div class="week-grid" id="weekGrid"></div>
+        </div>
+
+        <!-- POMODORO TIMER -->
+        <div class="pomo-card ani" id="pomoCard">
+          <div class="pomo-hdr">
+            <span class="pomo-hdr-title">🍅 Pomodoro Timer</span>
+            <div class="pomo-mode-btns">
+              <button class="pomo-mode-btn pomo-active" onclick="setPomoMode('focus',this)">Tập trung</button>
+              <button class="pomo-mode-btn" onclick="setPomoMode('short',this)">Nghỉ ngắn</button>
+              <button class="pomo-mode-btn" onclick="setPomoMode('long',this)">Nghỉ dài</button>
+            </div>
+          </div>
+          <div class="pomo-body">
+            <div class="pomo-ring-wrap">
+              <svg viewBox="0 0 130 130">
+                <circle class="pomo-ring-bg" cx="65" cy="65" r="55"/>
+                <circle class="pomo-ring-fill" id="pomoRing" cx="65" cy="65" r="55"/>
+              </svg>
+              <div class="pomo-center">
+                <div class="pomo-time" id="pomoTime">25:00</div>
+                <div class="pomo-sublabel" id="pomoSubLabel">TẬP TRUNG</div>
+              </div>
+            </div>
+            <div class="pomo-task-lbl" id="pomoTaskName">🎯 Chọn bài tập để bắt đầu</div>
+            <div class="pomo-btns">
+              <button class="pomo-btn-start" id="pomoStartBtn" onclick="togglePomo()">▶ Bắt đầu</button>
+              <button class="pomo-btn-reset" onclick="resetPomo()">↺ Reset</button>
+            </div>
+            <div class="pomo-session-info">Phiên <span id="pomoCurrent">1</span> / 4</div>
+            <div class="pomo-dots" id="pomoDots"></div>
+          </div>
+        </div>
+
+        <div class="card ani">
+          <div class="w-hdr"><div class="w-hdr-left">✏️ Bài chưa xong</div></div>
+          <div class="w-body"><div id="notesList" class="notes-list"></div></div>
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS TAB -->
+  <div class="tab-panel" id="tab-stats">
+    <div class="stats-wrap">
+      <div class="stats-header">
+        <button class="stats-period-btn active" onclick="setStatsPeriod('week',this)">Tuần này</button>
+        <button class="stats-period-btn" onclick="setStatsPeriod('all',this)">Tất cả</button>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-card ani">
+        <h3>📊 Tiến độ theo ngày trong tuần</h3>
+        <div class="bar-chart" id="barChart"></div>
+      </div>
+      <div class="chart-card ani">
+        <h3>🏆 Bài hoàn thành nhiều nhất</h3>
+        <div class="top-tasks" id="topTasks"></div>
+      </div>
+    </div>
+  </div>
+  <!-- VOCAB TAB -->
+  <div class="tab-panel" id="tab-vocab">
+    <div class="vocab-wrap">
+      <div class="vocab-add-card ani">
+        <h3>📖 Thêm từ phát âm sai</h3>
+        <div class="vocab-add-row">
+          <input class="vocab-input" id="vocabInput" placeholder="Từ hoặc cụm từ..." onkeydown="if(event.key==='Enter')addVocab()"/>
+          <input class="vocab-input vocab-ipa-input" id="vocabIPA" placeholder="Phiên âm (vd: /rɪˈpiːt/)" onkeydown="if(event.key==='Enter')addVocab()"/>
+          <button class="btn-vocab-add" onclick="addVocab()">＋ Thêm</button>
+        </div>
+      </div>
+      <div class="vocab-list-card ani">
+        <div class="vocab-list-hdr">
+          <h3>📝 Danh sách từ cần luyện</h3>
+          <span class="vocab-count" id="vocabCount">0 từ</span>
+        </div>
+        <div style="padding:12px 20px 8px;">
+          <input class="vocab-search" id="vocabSearch" placeholder="🔍 Tìm từ..." oninput="renderVocabList()"/>
+        </div>
+        <div class="vocab-col-hdr">
+          <span>Từ / Cụm từ</span>
+          <span>Phiên âm</span>
+          <span>Nghĩa tiếng Việt</span>
+          <span>Ngày thêm</span>
+          <span></span>
+        </div>
+        <div id="vocabList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div class="tab-panel" id="tab-history">
+    <div class="history-wrap">
+      <div class="month-nav">
+        <button class="month-nav-btn" onclick="changeHistMonth(-1)">&#8249;</button>
+        <div class="month-label" id="histMonthLabel"></div>
+        <button class="month-nav-btn" onclick="changeHistMonth(1)">&#8250;</button>
+      </div>
+      <div class="history-calendar" id="histCalendar"></div>
+      <div class="history-detail" id="histDetail">
+        <div class="no-history">&#128518; Chon mot ngay de xem chi tiet</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<input type="checkbox" id="soundToggle" checked style="display:none"/>
+<div class="toast" id="toast">
+  <div class="ti" id="tIcon"></div>
+  <div><div class="tt" id="tTitle"></div><div class="tm" id="tMsg"></div></div>
+</div>
+
+<script>
+// ===================== FIREBASE STUB (filled after SDK loads) =====================
+var db = {
+  ref: function() { return { set: function(){return Promise.resolve();}, once: function(){return Promise.resolve({val:function(){return null;}});}, on: function(){} }; }
+};
+
+// ===================== DATA =====================
+const DEFAULT_SCHEDULE = {
+  MON:{
+    morning:[
+      {id:'mon-ra',   name:'RA – Read Aloud',             detail:'5 câu',  time:'~15 mins'},
+      {id:'mon-rs',   name:'RS – Repeat Sentence',        detail:'50 câu', time:'~1 hr',  hl:true},
+      {id:'mon-di',   name:'DI – Describe Image',         detail:'10 câu', time:'~30 mins'},
+    ],
+    evening:[
+      {id:'mon-sst',  name:'SST – Summarize Spoken Text', detail:'3 câu',  time:'~30 mins'},
+      {id:'mon-swt',  name:'SWT – Summarize Written Text',detail:'1 câu',  time:'~10 mins'},
+      {id:'mon-fibrw',name:'FIBRW – Fill in the Blanks',  detail:'15 câu', time:'~30 mins'},
+      {id:'mon-hiw',  name:'HIW – Highlight Incorrect',   detail:'30 câu', time:'~30 mins'},
+    ]
+  },
+  TUE:{
+    morning:[
+      {id:'tue-rl',   name:'RL – Re-tell Lecture',        detail:'5 câu',  time:'~30 mins'},
+      {id:'tue-sgd',  name:'SGD – Summarize Group Disc.', detail:'3 câu',  time:'~15 mins'},
+      {id:'tue-rts',  name:'RTS – Respond to Situation',  detail:'5 câu',  time:'~10 mins'},
+    ],
+    evening:[
+      {id:'tue-dict', name:'Dictation',                   detail:'15 câu', time:''},
+      {id:'tue-essay',name:'Essay Writing',               detail:'2 bài',  time:'~40 mins'},
+      {id:'tue-fibr', name:'FIBR – Fill in Blanks (R)',   detail:'15 câu', time:'~30 mins'},
+      {id:'tue-rs',   name:'RS – Repeat Sentence',        detail:'20 câu', time:'~30 mins', hl:true},
+    ]
+  },
+  WED:{
+    morning:[
+      {id:'wed-ra',   name:'RA – Read Aloud',             detail:'5 câu',  time:'~15 mins'},
+      {id:'wed-rs',   name:'RS – Repeat Sentence',        detail:'50 câu', time:'~1 hr',  hl:true},
+      {id:'wed-di',   name:'DI – Describe Image',         detail:'10 câu', time:'~30 mins'},
+    ],
+    evening:[
+      {id:'wed-sst',  name:'SST – Summarize Spoken Text', detail:'3 câu',  time:'~30 mins'},
+      {id:'wed-swt',  name:'SWT – Summarize Written Text',detail:'1 câu',  time:'~10 mins'},
+      {id:'wed-fibrw',name:'FIBRW – Fill in the Blanks',  detail:'15 câu', time:'~30 mins'},
+      {id:'wed-hiw',  name:'HIW – Highlight Incorrect',   detail:'30 câu', time:'~30 mins'},
+    ]
+  },
+  THU:{
+    morning:[
+      {id:'thu-rl',   name:'RL – Re-tell Lecture',        detail:'5 câu',  time:'~30 mins'},
+      {id:'thu-sgd',  name:'SGD – Summarize Group Disc.', detail:'3 câu',  time:'~15 mins'},
+      {id:'thu-rts',  name:'RTS – Respond to Situation',  detail:'5 câu',  time:'~10 mins'},
+    ],
+    evening:[
+      {id:'thu-dict', name:'Dictation',                   detail:'15 câu', time:''},
+      {id:'thu-essay',name:'Essay Writing',               detail:'2 bài',  time:'~40 mins'},
+      {id:'thu-fibr', name:'FIBR – Fill in Blanks (R)',   detail:'15 câu', time:'~30 mins'},
+      {id:'thu-rs',   name:'RS – Repeat Sentence',        detail:'20 câu', time:'~30 mins', hl:true},
+    ]
+  },
+  FRI:{
+    morning:[
+      {id:'fri-ra',   name:'RA – Read Aloud',             detail:'5 câu',  time:'~15 mins'},
+      {id:'fri-rs',   name:'RS – Repeat Sentence',        detail:'50 câu', time:'~1 hr',  hl:true},
+      {id:'fri-di',   name:'DI – Describe Image',         detail:'10 câu', time:'~30 mins'},
+    ],
+    evening:[
+      {id:'fri-sst',  name:'SST – Summarize Spoken Text', detail:'3 câu',  time:'~30 mins'},
+      {id:'fri-swt',  name:'SWT – Summarize Written Text',detail:'1 câu',  time:'~10 mins'},
+      {id:'fri-fibrw',name:'FIBRW – Fill in the Blanks',  detail:'15 câu', time:'~30 mins'},
+      {id:'fri-hiw',  name:'HIW – Highlight Incorrect',   detail:'30 câu', time:'~30 mins'},
+    ]
+  }
+};
+
+const DAY_CONFIG=[
+  {key:'MON',label:'MON',vn:'Thứ 2'},
+  {key:'TUE',label:'TUE',vn:'Thứ 3'},
+  {key:'WED',label:'WED',vn:'Thứ 4'},
+  {key:'THU',label:'THU',vn:'Thứ 5'},
+  {key:'FRI',label:'FRI',vn:'Thứ 6'},
+];
+const JS2KEY={1:'MON',2:'TUE',3:'WED',4:'THU',5:'FRI'};
+
+// ===================== STATE =====================
+let schedule   = JSON.parse(localStorage.getItem('pte_schedule'))    || deepClone(DEFAULT_SCHEDULE);
+let checked    = JSON.parse(localStorage.getItem('pte_checked'))     || {};
+let taskNotes  = JSON.parse(localStorage.getItem('pte_task_notes'))  || {};
+let dayNotes   = JSON.parse(localStorage.getItem('pte_day_notes'))   || {};
+
+let taskDiff = JSON.parse(localStorage.getItem('pte_task_diff')) || {};
+let statsPeriod= 'week';
+let activeDay  = null;
+let openNoteId = null;
+let addFormOpen= false;
+
+function deepClone(o){return JSON.parse(JSON.stringify(o));}
+function getTodayKey(){return JS2KEY[new Date().getDay()]||null;}
+function initDay(){activeDay=getTodayKey()||'MON';}
+
+function persist(){
+  localStorage.setItem('pte_schedule',   JSON.stringify(schedule));
+  localStorage.setItem('pte_checked',    JSON.stringify(checked));
+  localStorage.setItem('pte_task_notes', JSON.stringify(taskNotes));
+  localStorage.setItem('pte_day_notes',  JSON.stringify(dayNotes));
+  localStorage.setItem('pte_task_diff',  JSON.stringify(taskDiff));
+  localStorage.setItem('pte_history30',  JSON.stringify(history30));
+  db.ref('pte_data').set({schedule,checked,taskNotes,dayNotes,taskDiff,history30})
+    .then(()=>setSyncStatus(true)).catch(()=>setSyncStatus(false));
+}
+function setDiff(id,val){
+  taskDiff[id]=taskDiff[id]===val?0:val;
+  persist(); renderSchedule();
+}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+
+// ===================== SOUND =====================
+let audioCtx=null;
+function getAudio(){if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+
+function playSound(type){
+  if(!document.getElementById('soundToggle').checked) return;
+  try{
+    const ctx=getAudio();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if(type==='done'){
+      osc.frequency.setValueAtTime(523,ctx.currentTime);
+      osc.frequency.setValueAtTime(659,ctx.currentTime+.1);
+      osc.frequency.setValueAtTime(784,ctx.currentTime+.2);
+      gain.gain.setValueAtTime(.3,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5);
+      osc.start(); osc.stop(ctx.currentTime+.5);
+    } else if(type==='allDone'){
+      const freqs=[523,659,784,1047];
+      freqs.forEach((f,i)=>{
+        const o2=ctx.createOscillator(), g2=ctx.createGain();
+        o2.connect(g2); g2.connect(ctx.destination);
+        o2.frequency.value=f;
+        g2.gain.setValueAtTime(.25,ctx.currentTime+i*.12);
+        g2.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.12+.4);
+        o2.start(ctx.currentTime+i*.12); o2.stop(ctx.currentTime+i*.12+.4);
+      });
+    } else if(type==='note'){
+      osc.frequency.setValueAtTime(440,ctx.currentTime);
+      gain.gain.setValueAtTime(.15,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.25);
+      osc.start(); osc.stop(ctx.currentTime+.25);
+    } else if(type==='remind'){
+      [440,550,440].forEach((f,i)=>{
+        const o2=ctx.createOscillator(), g2=ctx.createGain();
+        o2.connect(g2); g2.connect(ctx.destination);
+        o2.frequency.value=f;
+        g2.gain.setValueAtTime(.2,ctx.currentTime+i*.2);
+        g2.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.2+.3);
+        o2.start(ctx.currentTime+i*.2); o2.stop(ctx.currentTime+i*.2+.3);
+      });
+    }
+  }catch(e){}
+}
+
+// ===================== TABS =====================
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='stats') renderStats();
+  if(name==='history') renderHistoryCalendar();
+  if(name==='vocab') renderVocabList();
+}
+
+// ===================== DAY SELECTOR =====================
+function renderDaySelector(){
+  const today=getTodayKey(), sel=document.getElementById('daySelector');
+  sel.innerHTML='';
+  DAY_CONFIG.forEach(d=>{
+    const all=allTasks(d.key), done=all.filter(t=>checked[t.id]).length;
+    const pct=all.length?Math.round(done/all.length*100):0;
+    const hasNote=!!dayNotes[d.key]||all.some(t=>taskNotes[t.id]);
+    const btn=document.createElement('button');
+    btn.className='day-btn'+(d.key===activeDay?' active':'')+(d.key===today?' today':'')+(hasNote?' has-note':'');
+    btn.innerHTML=`<div>${d.label}</div><div class="dn">${d.vn}</div><div class="pb" style="width:${pct}%"></div>`;
+    btn.onclick=()=>{activeDay=d.key;openNoteId=null;addFormOpen=false;updatePomoDisplay();
+renderAll();};
+    sel.appendChild(btn);
+  });
+}
+
+function allTasks(dayKey){
+  const d=schedule[dayKey]; if(!d) return [];
+  return [...(d.morning||[]),...(d.evening||[])];
+}
+
+// ===================== SCHEDULE =====================
+function renderSchedule(){
+  const card=document.getElementById('scheduleCard');
+  const day=schedule[activeDay];
+  if(!day){card.innerHTML=`<div class="empty-day"><div class="ei">🌴</div><h3>Ngày nghỉ!</h3><p>Không có lịch học. Nghỉ ngơi nhé!</p></div>`;return;}
+  const all=allTasks(activeDay), done=all.filter(t=>checked[t.id]).length;
+  const dayVN=DAY_CONFIG.find(d=>d.key===activeDay)?.vn||'';
+  const dn=dayNotes[activeDay]||'';
+
+  card.innerHTML=`
+    <div class="card-hdr">
+      <h2>📋 ${dayVN} — Kế hoạch học</h2>
+      <span class="done-badge">${done}/${all.length} hoàn thành</span>
+    </div>
+    <div class="task-section">
+      <div class="s-morning"><div class="sec-title"><span class="session-lbl sm">☀️ Buổi sáng</span></div>
+      ${(day.morning||[]).map(t=>taskHTML(t,false)).join('')}
+      </div>
+      <div class="s-evening"><div class="sec-title" style="margin-top:4px"><span class="session-lbl se">🌙 Buổi tối</span></div>
+      ${(day.evening||[]).map(t=>taskHTML(t,false)).join('')}
+    </div>
+    </div>
+    <button class="add-task-btn" onclick="toggleAddForm()">＋ Thêm bài tập tùy chỉnh</button>
+    <div class="add-task-form${addFormOpen?' open':''}" id="addTaskForm">
+      <div class="atf-grid">
+        <input class="atf-input" id="atfName" placeholder="Tên bài tập (vd: WE – Write Email)" />
+        <input class="atf-input" id="atfDetail" placeholder="Số câu" />
+        <input class="atf-input" id="atfTime" placeholder="Thời gian" />
+      </div>
+      <div class="atf-row">
+        <select class="atf-sel" id="atfSession">
+          <option value="morning">☀️ Buổi sáng</option>
+          <option value="evening">🌙 Buổi tối</option>
+        </select>
+        <label class="atf-chk-lbl"><input type="checkbox" id="atfHL"/> Bài quan trọng ⭐</label>
+      </div>
+      <div class="atf-actions">
+        <button class="btn-atf-add" onclick="addCustomTask()">＋ Thêm</button>
+        <button class="btn-atf-cancel" onclick="toggleAddForm()">Hủy</button>
+      </div>
+    </div>
+    <div class="day-note-sec">
+      <div class="day-note-lbl">📝 Ghi chú chung — ${dayVN}</div>
+      <textarea class="day-note-ta" id="dayNoteTA" placeholder="Ghi lại những gì chưa hoàn thành, lý do, hoặc kế hoạch bổ sung…">${dn}</textarea>
+      <div class="day-note-foot"><button class="btn-save-day" onclick="saveDayNote()">Lưu ghi chú</button></div>
+    </div>
+  `;
+
+  card.querySelectorAll('.task-row').forEach(r=>r.addEventListener('click',()=>toggleTask(r.dataset.id)));
+  card.querySelectorAll('.note-btn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();toggleNote(b.dataset.id);}));
+
+  updateProgress();
+  if(openNoteId){const a=document.getElementById('note-area-'+openNoteId);if(a)a.classList.add('open');}
+}
+
+function taskHTML(t, isCustom=false){
+  const done=checked[t.id]?'done':'';
+  const note=taskNotes[t.id]||'', hasNote=!!note;
+  const custom=isCustom||t.custom||false;
+  const diff=taskDiff[t.id]||0;
+  const diffLabels=['','Dễ','Trung bình','Khó'];
+  const diffClass=['','diff-e','diff-m','diff-h'];
+  // Timer state
+  const timerState=taskTimers[t.id]||null;
+  const timerMins=timerState?Math.ceil(timerState.totalSecs/60):getDefaultMins(t);
+  const timerLeft=timerState?timerState.leftSecs:timerMins*60;
+  const timerM=Math.floor(timerLeft/60), timerS=timerLeft%60;
+  const timerDisplayStr=String(timerM).padStart(2,'0')+':'+String(timerS).padStart(2,'0');
+  const noteBody=hasNote
+    ?`<div class="saved-note" id="note-display-${t.id}">
+        <span style="flex:1">${esc(note)}</span>
+        <div class="nact">
+          <button class="nedit" onclick="editNote('${t.id}')">Sửa</button>
+          <button class="ndel" onclick="delNote('${t.id}')">Xóa</button>
+        </div>
+      </div>`
+    :`<div class="niw" id="note-input-${t.id}">
+        <textarea class="note-ta" id="note-text-${t.id}" placeholder="Còn bao nhiêu câu chưa làm? Lý do? Ghi lại để nhớ…"></textarea>
+        <button class="nsave" onclick="saveNote('${t.id}')">Lưu</button>
+      </div>`;
+
+  return `
+    <div class="task-item ${done}" id="task-item-${t.id}">
+      <div class="task-row" data-id="${t.id}">
+        <div class="chk"></div>
+        <div class="ti">
+          <div class="tn${t.hl?' star':''}">${t.name}${t.hl?' ⭐':''}</div>
+          <div class="tm">
+            <span>${t.detail}</span>
+            ${t.time?`<span class="badge">${t.time}</span>`:''}
+            ${diff?`<span class="diff-lbl ${diffClass[diff]}">${diffLabels[diff]}</span>`:''}
+            ${t.custom?`<span class="badge" style="background:var(--purple-bg);color:var(--purple);border-color:#DDD6FE">Tùy chỉnh</span>`:''}
+          </div>
+        </div>
+        <div class="diff-wrap" onclick="event.stopPropagation()" title="Đánh giá độ khó">
+          ${[1,2,3].map(i=>`<button class="diff-star${diff>=i?' don':''}" onclick="setDiff('${t.id}',${i})">${['😊','😅','😰'][i-1]}</button>`).join('')}
+        </div>
+        <button class="pomo-task-btn" onclick="event.stopPropagation();startPomoForTask('${t.id}','${t.name.split('–')[0].trim()}')">🍅</button>
+        <button class="task-timer-btn${timerState&&timerState.openUI?' active':''}" onclick="event.stopPropagation();toggleTimerUI('${t.id}')">⏱ ${timerMins}m</button>
+        <button class="note-btn${hasNote?' has-note':''}" data-id="${t.id}">✏️ ${hasNote?'Có ghi chú':'Ghi chú'}</button>
+        ${t.custom?`<button class="task-del-btn" onclick="delCustomTask('${activeDay}','${t.id}','${t.id.startsWith(activeDay.toLowerCase()+'-m')?'morning':'evening'}');event.stopPropagation()">✕</button>`:''}
+      </div>
+      <div class="task-timer-wrap${timerState&&timerState.openUI?'':' hidden'}" id="timer-wrap-${t.id}">
+        <span id="tdisp-${t.id}" class="timer-display">${timerDisplayStr}</span>
+        <div class="timer-progress"><div class="timer-progress-bar" id="tbar-${t.id}" style="width:100%"></div></div>
+        <input class="timer-input" id="tinput-m-${t.id}" type="number" min="0" max="99" value="${timerM}" onchange="timerInputChange('${t.id}')" onclick="event.stopPropagation()"/>
+        <span class="timer-sep">:</span>
+        <input class="timer-input" id="tinput-s-${t.id}" type="number" min="0" max="59" value="${timerS}" onchange="timerInputChange('${t.id}')" onclick="event.stopPropagation()"/>
+        <button class="btn-timer btn-timer-start" id="tbtn-${t.id}" onclick="startTaskTimer('${t.id}')">▶ Bắt đầu</button>
+        <button class="btn-timer btn-timer-reset" onclick="resetTaskTimer('${t.id}')">↺</button>
+      </div>
+      <div class="task-note-area" id="note-area-${t.id}">
+        <div class="task-note-inner">${noteBody}</div>
+      </div>
+    </div>`;
+}
+
+// ===================== TASK ACTIONS =====================
+function toggleTask(id){
+  checked[id]=!checked[id]; saveSnapshot(); persist();
+  if(checked[id]){
+    const day=schedule[activeDay];
+    if(day){
+      const all=allTasks(activeDay);
+      const allDone=all.every(t=>checked[t.id]);
+      if(allDone){ playSound('allDone'); showToast('🏆','Xuất sắc!','Bạn đã hoàn thành toàn bộ bài hôm nay!'); }
+      else { playSound('done'); showToast('✅','Hoàn thành!','Bài tập đã được đánh dấu xong.'); }
+    }
+  }
+  renderAll();
+}
+
+function toggleNote(id){
+  if(openNoteId===id){
+    openNoteId=null;
+    const a=document.getElementById('note-area-'+id);if(a)a.classList.remove('open');
+  } else {
+    if(openNoteId){const p=document.getElementById('note-area-'+openNoteId);if(p)p.classList.remove('open');}
+    openNoteId=id;
+    const a=document.getElementById('note-area-'+id);if(a)a.classList.add('open');
+  }
+}
+
+function saveNote(id){
+  const ta=document.getElementById('note-text-'+id); if(!ta) return;
+  const val=ta.value.trim(); if(!val) return;
+  taskNotes[id]=val; persist(); playSound('note');
+  showToast('✏️','Đã lưu ghi chú!','Bài tập chưa xong đã được ghi lại.');
+  openNoteId=id; renderAll();
+}
+
+function editNote(id){
+  const existing=taskNotes[id]||'';
+  const disp=document.getElementById('note-display-'+id); if(!disp) return;
+  disp.outerHTML=`<div class="niw" id="note-input-${id}">
+    <textarea class="note-ta" id="note-text-${id}">${existing}</textarea>
+    <button class="nsave" onclick="saveNote('${id}')">Lưu</button>
+  </div>`;
+  const ta=document.getElementById('note-text-'+id); if(ta){ta.value=existing;ta.focus();}
+}
+
+function delNote(id){
+  delete taskNotes[id]; persist(); openNoteId=null;
+  showToast('🗑️','Đã xóa','Ghi chú đã được xóa.'); renderAll();
+}
+
+function saveDayNote(){
+  const ta=document.getElementById('dayNoteTA'); if(!ta) return;
+  dayNotes[activeDay]=ta.value.trim(); persist();
+  playSound('note'); showToast('📝','Đã lưu!','Ghi chú ngày đã được lưu.');
+  renderDaySelector(); renderNotesList();
+}
+
+// ===================== CUSTOM TASKS =====================
+function toggleAddForm(){
+  addFormOpen=!addFormOpen;
+  const f=document.getElementById('addTaskForm');
+  if(f) f.classList.toggle('open',addFormOpen);
+}
+
+function addCustomTask(){
+  const name=document.getElementById('atfName').value.trim();
+  if(!name){showToast('⚠️','Thiếu tên','Vui lòng nhập tên bài tập.');return;}
+  const detail=document.getElementById('atfDetail').value.trim()||'';
+  const time=document.getElementById('atfTime').value.trim()||'';
+  const session=document.getElementById('atfSession').value;
+  const hl=document.getElementById('atfHL').checked;
+  const id=activeDay.toLowerCase()+'-custom-'+Date.now();
+  const task={id,name,detail,time,hl,custom:true};
+  if(!schedule[activeDay]) schedule[activeDay]={morning:[],evening:[]};
+  if(!schedule[activeDay][session]) schedule[activeDay][session]=[];
+  schedule[activeDay][session].push(task);
+  persist(); addFormOpen=false;
+  showToast('➕','Đã thêm!','Bài tập tùy chỉnh đã được thêm vào lịch.');
+  renderAll();
+}
+
+function delCustomTask(dayKey, taskId, session){
+  if(!schedule[dayKey]||!schedule[dayKey][session]) return;
+  schedule[dayKey][session]=schedule[dayKey][session].filter(t=>t.id!==taskId);
+  delete checked[taskId]; delete taskNotes[taskId]; persist();
+  showToast('🗑️','Đã xóa','Bài tập tùy chỉnh đã được xóa.'); renderAll();
+}
+
+// ===================== PROGRESS =====================
+function updateProgress(){
+  const day=schedule[activeDay]; if(!day) return;
+  const all=allTasks(activeDay), done=all.filter(t=>checked[t.id]).length, total=all.length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('progPct').textContent=pct+'%';
+  document.getElementById('cntDone').textContent=done;
+  document.getElementById('cntTotal').textContent=total;
+  const circ=2*Math.PI*45;
+  const ring=document.getElementById('progRing');
+  ring.style.strokeDasharray=circ;
+  ring.style.strokeDashoffset=circ-(pct/100)*circ;
+  ring.style.stroke=pct===100?'#D97706':pct>=50?'#10B981':'#2563EB';
+}
+
+function renderWeekGrid(){
+  const g=document.getElementById('weekGrid'); g.innerHTML='';
+  DAY_CONFIG.forEach(d=>{
+    const all=allTasks(d.key), done=all.filter(t=>checked[t.id]).length;
+    const pct=all.length?Math.round(done/all.length*100):0;
+    g.innerHTML+=`<div class="wdm">
+      <div class="wlbl">${d.label}</div>
+      <div class="wbw"><div class="wb" style="height:${Math.max(pct,2)}%"></div></div>
+      <div class="wpct">${pct}%</div>
+    </div>`;
+  });
+}
+
+function renderNotesList(){
+  const list=document.getElementById('notesList');
+  const entries=[];
+  DAY_CONFIG.forEach(d=>{
+    const all=allTasks(d.key);
+    all.forEach(t=>{if(taskNotes[t.id]) entries.push({day:d.vn,dk:d.key,lbl:t.name.split('–')[0].trim(),note:taskNotes[t.id]});});
+    if(dayNotes[d.key]) entries.push({day:d.vn,dk:d.key,lbl:'Ghi chú chung',note:dayNotes[d.key]});
+  });
+  document.getElementById('statNotes').textContent=entries.length;
+  if(!entries.length){
+    list.innerHTML=`<div class="no-notes">Chưa có ghi chú nào.<br>Nhấn <strong style="color:var(--orange)">✏️ Ghi chú</strong> trên từng bài!</div>`;
+    return;
+  }
+  list.innerHTML=entries.map(e=>`
+    <div class="note-entry" onclick="jumpToDay('${e.dk}')">
+      <div class="neh"><span class="ne-tag">${e.day}</span><span class="ne-lbl">${e.lbl}</span></div>
+      <div class="ne-prev">${esc((e.note||'').substring(0,85))}${(e.note||'').length>85?'…':''}</div>
+    </div>`).join('');
+}
+
+function updateHeaderStats(){
+  let total=0;
+  DAY_CONFIG.forEach(d=>{total+=allTasks(d.key).filter(t=>checked[t.id]).length;});
+  document.getElementById('statDone').textContent=total;
+  const keys=['MON','TUE','WED','THU','FRI'], todayKey=getTodayKey();
+  let idx=keys.indexOf(todayKey); if(idx===-1) idx=4;
+  let streak=0;
+  for(let i=idx;i>=0;i--){
+    const all=allTasks(keys[i]);
+    if(all.filter(t=>checked[t.id]).length>0) streak++; else break;
+  }
+  document.getElementById('statStreak').textContent=streak;
+}
+
+function jumpToDay(k){activeDay=k;openNoteId=null;addFormOpen=false;renderAll();window.scrollTo({top:0,behavior:'smooth'});}
+
+// ===================== STATS =====================
+function setStatsPeriod(p,btn){
+  statsPeriod=p;
+  document.querySelectorAll('.stats-period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStats();
+}
+
+function renderStats(){
+  // Summary cards
+  let totalTasks=0, doneTasks=0, totalDays=0, doneDays=0;
+  DAY_CONFIG.forEach(d=>{
+    const all=allTasks(d.key);
+    const done=all.filter(t=>checked[t.id]).length;
+    totalTasks+=all.length; doneTasks+=done;
+    if(all.length>0) totalDays++;
+    if(done===all.length&&all.length>0) doneDays++;
+  });
+  const overallPct=totalTasks?Math.round(doneTasks/totalTasks*100):0;
+
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stats-card"><div class="sc-icon">✅</div><div class="sc-val">${doneTasks}</div><div class="sc-lbl">Bài đã hoàn thành</div><div class="sc-sub">/ ${totalTasks} tổng bài</div></div>
+    <div class="stats-card"><div class="sc-icon">📅</div><div class="sc-val">${doneDays}</div><div class="sc-lbl">Ngày hoàn thành 100%</div><div class="sc-sub">/ ${totalDays} ngày có lịch</div></div>
+    <div class="stats-card"><div class="sc-icon">📊</div><div class="sc-val">${overallPct}%</div><div class="sc-lbl">Tỉ lệ hoàn thành</div><div class="sc-sub">Tổng tuần này</div></div>
+    <div class="stats-card"><div class="sc-icon">🔥</div><div class="sc-val">${document.getElementById('statStreak').textContent}</div><div class="sc-lbl">Ngày học liên tiếp</div><div class="sc-sub">Streak hiện tại</div></div>
+  `;
+
+  // Bar chart
+  const bc=document.getElementById('barChart'); bc.innerHTML='';
+  DAY_CONFIG.forEach(d=>{
+    const all=allTasks(d.key), done=all.filter(t=>checked[t.id]).length;
+    const pct=all.length?Math.round(done/all.length*100):0;
+    bc.innerHTML+=`<div class="bc-col">
+      <div class="bc-val">${pct}%</div>
+      <div class="bc-bar-wrap"><div class="bc-bar" style="height:${pct}%"></div></div>
+      <div class="bc-lbl">${d.label}</div>
+    </div>`;
+  });
+
+  // Top tasks
+  const taskStats={};
+  DAY_CONFIG.forEach(d=>{
+    allTasks(d.key).forEach(t=>{
+      const base=t.name.split('–')[0].trim();
+      if(!taskStats[base]) taskStats[base]={done:0,total:0};
+      taskStats[base].total++;
+      if(checked[t.id]) taskStats[base].done++;
+    });
+  });
+  const sorted=Object.entries(taskStats).sort((a,b)=>b[1].done-a[1].done).slice(0,5);
+  const maxDone=sorted[0]?sorted[0][1].done:1;
+  document.getElementById('topTasks').innerHTML=sorted.length
+    ?sorted.map(([name,s],i)=>`
+      <div class="top-task-row">
+        <div class="tt-rank">${i+1}</div>
+        <div class="tt-info">
+          <div class="tt-name">${name}</div>
+          <div class="tt-bar-wrap"><div class="tt-bar" style="width:${maxDone?Math.round(s.done/maxDone*100):0}%"></div></div>
+        </div>
+        <div class="tt-pct">${s.done}/${s.total}</div>
+      </div>`).join('')
+    :`<div class="no-notes">Chưa có dữ liệu hoàn thành.</div>`;
+}
+
+
+// ===================== CLOCK =====================
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');
+}
+
+// ===================== TOAST =====================
+let tTimer;
+function showToast(icon,title,msg){
+  const t=document.getElementById('toast');
+  document.getElementById('tIcon').textContent=icon;
+  document.getElementById('tTitle').textContent=title;
+  document.getElementById('tMsg').textContent=msg;
+  t.style.borderLeftColor=icon==='⚠️'?'var(--red)':icon==='🏆'?'var(--yellow)':'var(--green)';
+  t.classList.add('show');
+  clearTimeout(tTimer);
+  tTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+
+// ===================== POMODORO =====================
+const POMO_MODES={focus:25*60,short:5*60,long:15*60};
+let pomoMode='focus',pomoTotal=25*60,pomoLeft=25*60;
+let pomoRunning=false,pomoTimer=null,pomoSession=1,pomoMax=4;
+
+function setPomoMode(mode,btn){
+  if(pomoRunning)return;
+  pomoMode=mode;pomoTotal=POMO_MODES[mode];pomoLeft=pomoTotal;
+  document.querySelectorAll('.pomo-mode-btn').forEach(b=>b.classList.remove('pomo-active'));
+  btn.classList.add('pomo-active');
+  const labels={focus:'TẬP TRUNG',short:'NGHỈ NGẮN',long:'NGHỈ DÀI'};
+  const el=document.getElementById('pomoSubLabel');if(el)el.textContent=labels[mode];
+  updatePomoDisplay();
+}
+
+function startPomoForTask(id,name){
+  const el=document.getElementById('pomoTaskName');if(el)el.textContent='🍅 '+name;
+  const card=document.getElementById('pomoCard');
+  if(card)card.scrollIntoView({behavior:'smooth',block:'center'});
+  showToast('🍅','Pomodoro sẵn sàng!','Nhấn Bắt đầu khi bạn sẵn sàng!');
+}
+
+function togglePomo(){
+  if(pomoRunning){
+    clearInterval(pomoTimer);pomoRunning=false;
+    document.getElementById('pomoStartBtn').textContent='▶ Tiếp tục';
+  }else{
+    pomoRunning=true;
+    document.getElementById('pomoStartBtn').textContent='⏸ Tạm dừng';
+    pomoTimer=setInterval(()=>{
+      pomoLeft--;updatePomoDisplay();
+      if(pomoLeft<=0){
+        clearInterval(pomoTimer);pomoRunning=false;playSound('allDone');
+        if(pomoMode==='focus'){
+          showToast('🏆','Xong phiên tập trung!','Nghỉ ngơi chút nhé!');
+          pomoSession=pomoSession>=pomoMax?1:pomoSession+1;
+        }else{
+          showToast('🍅','Hết giờ nghỉ!','Tiếp tục học thôi!');
+        }
+        pomoTotal=POMO_MODES.focus;pomoLeft=pomoTotal;pomoMode='focus';
+        document.querySelectorAll('.pomo-mode-btn').forEach((b,i)=>b.classList.toggle('pomo-active',i===0));
+        const sl=document.getElementById('pomoSubLabel');if(sl)sl.textContent='TẬP TRUNG';
+        document.getElementById('pomoStartBtn').textContent='▶ Bắt đầu';
+        updatePomoDisplay();
+      }
+    },1000);
+  }
+}
+
+function resetPomo(){
+  clearInterval(pomoTimer);pomoRunning=false;pomoLeft=pomoTotal;
+  document.getElementById('pomoStartBtn').textContent='▶ Bắt đầu';
+  updatePomoDisplay();
+}
+
+function updatePomoDisplay(){
+  const m=String(Math.floor(pomoLeft/60)).padStart(2,'0');
+  const s=String(pomoLeft%60).padStart(2,'0');
+  const el=document.getElementById('pomoTime');if(el)el.textContent=m+':'+s;
+  const circ=2*Math.PI*55;
+  const ring=document.getElementById('pomoRing');
+  if(ring){ring.style.strokeDasharray=circ;ring.style.strokeDashoffset=circ*(1-pomoLeft/pomoTotal);}
+  const ci=document.getElementById('pomoCurrent');if(ci)ci.textContent=pomoSession;
+  renderPomoDots();
+}
+
+function renderPomoDots(){
+  const d=document.getElementById('pomoDots');if(!d)return;
+  d.innerHTML=Array.from({length:pomoMax},(_,i)=>
+    '<div class="pomo-dot'+(i<pomoSession-1?' pdone':i===pomoSession-1?' pcurrent':'')+'"></div>'
+  ).join('');
+}
+
+// ===================== RENDER ALL =====================
+function renderAll(){
+  renderDaySelector();
+  renderSchedule();
+  renderWeekGrid();
+  renderNotesList();
+  updateHeaderStats();
+}
+
+
+// ===================== TASK TIMERS =====================
+var taskTimers = {};
+
+var TASK_MINS = {
+  'RA':3,'RS':1.2,'DI':3,'RL':6,'SGD':5,'RTS':2,
+  'SST':10,'SWT':10,'Essay':20,'FIBR':2,'FIBRW':2,
+  'HIW':1,'Dict':1.5
+};
+
+function getDefaultMins(task){
+  var name=task.name||'', detail=task.detail||'';
+  var match=detail.match(/(\d+)/);
+  var count=match?parseInt(match[1]):1;
+  for(var key in TASK_MINS){
+    if(name.indexOf(key)!==-1) return Math.round(TASK_MINS[key]*count);
+  }
+  var tm=(task.time||'').match(/(\d+)/);
+  return tm?parseInt(tm[1]):10;
+}
+
+function toggleTimerUI(id){
+  if(!taskTimers[id]){
+    var task=null;
+    DAY_CONFIG.forEach(function(d){allTasks(d.key).forEach(function(t){if(t.id===id)task=t;});});
+    var mins=task?getDefaultMins(task):10;
+    taskTimers[id]={totalSecs:mins*60,leftSecs:mins*60,running:false,intervalId:null,openUI:false};
+  }
+  taskTimers[id].openUI=!taskTimers[id].openUI;
+  renderSchedule();
+}
+
+function startTaskTimer(id){
+  if(!taskTimers[id])return;
+  var t=taskTimers[id];
+  if(t.running)return;
+  var mEl=document.getElementById('tinput-m-'+id);
+  var sEl=document.getElementById('tinput-s-'+id);
+  if(mEl&&sEl){
+    var m=parseInt(mEl.value)||0,s=parseInt(sEl.value)||0;
+    t.totalSecs=m*60+s; t.leftSecs=m*60+s;
+  }
+  if(t.leftSecs<=0)return;
+  t.running=true;
+  updateTimerDisplay(id);
+  t.intervalId=setInterval(function(){
+    if(!taskTimers[id])return;
+    taskTimers[id].leftSecs--;
+    updateTimerDisplay(id);
+    if(taskTimers[id].leftSecs<=0){
+      clearInterval(taskTimers[id].intervalId);
+      taskTimers[id].running=false;
+      taskTimers[id].leftSecs=0;
+      onTaskTimerDone(id);
+    }
+  },1000);
+  var btn=document.getElementById('tbtn-'+id);
+  if(btn){btn.textContent='⏸ Tạm dừng';btn.className='btn-timer btn-timer-pause';btn.onclick=function(){pauseTaskTimer(id);};}
+  var item=document.getElementById('task-item-'+id);
+  if(item)item.classList.add('timing');
+}
+
+function pauseTaskTimer(id){
+  if(!taskTimers[id])return;
+  clearInterval(taskTimers[id].intervalId);
+  taskTimers[id].running=false;
+  var btn=document.getElementById('tbtn-'+id);
+  if(btn){btn.textContent='▶ Tiếp tục';btn.className='btn-timer btn-timer-start';btn.onclick=function(){startTaskTimer(id);};}
+}
+
+function resetTaskTimer(id){
+  if(!taskTimers[id])return;
+  clearInterval(taskTimers[id].intervalId);
+  taskTimers[id].running=false;
+  taskTimers[id].leftSecs=taskTimers[id].totalSecs;
+  updateTimerDisplay(id);
+  var btn=document.getElementById('tbtn-'+id);
+  if(btn){btn.textContent='▶ Bắt đầu';btn.className='btn-timer btn-timer-start';btn.onclick=function(){startTaskTimer(id);};}
+  var item=document.getElementById('task-item-'+id);
+  if(item)item.classList.remove('timing');
+}
+
+function updateTimerDisplay(id){
+  if(!taskTimers[id])return;
+  var left=taskTimers[id].leftSecs,total=taskTimers[id].totalSecs;
+  var m=Math.floor(left/60),s=left%60;
+  var disp=document.getElementById('tdisp-'+id);
+  var bar=document.getElementById('tbar-'+id);
+  if(disp){
+    disp.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    disp.className='timer-display'+(left<=30&&taskTimers[id].running?' urgent':'');
+  }
+  if(bar){
+    var pct=total>0?(left/total*100):0;
+    bar.style.width=pct+'%';
+    bar.className='timer-progress-bar'+(left<=30?' urgent':'');
+  }
+}
+
+function onTaskTimerDone(id){
+  var taskName=id;
+  DAY_CONFIG.forEach(function(d){allTasks(d.key).forEach(function(t){if(t.id===id)taskName=t.name.split('–')[0].trim();});});
+  playTimerBell();
+  showToast('⏰','Hết giờ!',taskName+' — Thời gian đã kết thúc!');
+  if(Notification.permission==='granted') new Notification('⏰ Hết giờ! '+taskName,{body:'Thời gian làm bài đã kết thúc.'});
+  var item=document.getElementById('task-item-'+id);
+  if(item)item.classList.remove('timing');
+  var btn=document.getElementById('tbtn-'+id);
+  if(btn){btn.textContent='▶ Bắt đầu';btn.className='btn-timer btn-timer-start';btn.onclick=function(){startTaskTimer(id);};}
+}
+
+function playTimerBell(){
+  try{
+    var ctx=getAudio();
+    [0,0.7,1.4].forEach(function(delay){
+      [523,659,784].forEach(function(f,i){
+        var osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.frequency.value=f;
+        gain.gain.setValueAtTime(0.25/(i+1),ctx.currentTime+delay+i*0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.8);
+        osc.start(ctx.currentTime+delay+i*0.04);
+        osc.stop(ctx.currentTime+delay+0.9);
+      });
+    });
+  }catch(e){}
+}
+
+function timerInputChange(id){
+  if(!taskTimers[id]||taskTimers[id].running)return;
+  var mEl=document.getElementById('tinput-m-'+id);
+  var sEl=document.getElementById('tinput-s-'+id);
+  if(!mEl||!sEl)return;
+  var m=Math.max(0,parseInt(mEl.value)||0);
+  var s=Math.max(0,Math.min(59,parseInt(sEl.value)||0));
+  taskTimers[id].totalSecs=m*60+s;
+  taskTimers[id].leftSecs=m*60+s;
+  updateTimerDisplay(id);
+}
+
+
+// ===================== VOCAB =====================
+var vocabList = JSON.parse(localStorage.getItem('pte_vocab')) || [];
+
+function persistVocab() {
+  localStorage.setItem('pte_vocab', JSON.stringify(vocabList));
+  db.ref('pte_vocab').set(vocabList).then(function(){}).catch(function(){});
+}
+
+async function addVocab() {
+  var inp = document.getElementById('vocabInput');
+  var ipaInp = document.getElementById('vocabIPA');
+  if (!inp) return;
+  var word = inp.value.trim();
+  if (!word) { showToast('⚠️','Trống!','Nhập từ cần lưu.'); return; }
+  if (vocabList.find(function(v){ return v.word.toLowerCase()===word.toLowerCase(); })) {
+    showToast('⚠️','Đã có!','Từ này đã trong danh sách.'); return;
+  }
+  var ipa = ipaInp ? ipaInp.value.trim() : '';
+  var today = getTodayDate();
+  var id = Date.now();
+  vocabList.unshift({ word: word, ipa: ipa, meaning: '...đang dịch', date: today, id: id });
+  inp.value = '';
+  if (ipaInp) ipaInp.value = '';
+  persistVocab();
+  renderVocabList();
+  playSound('note');
+  showToast('📖','Đã thêm!','Đang dịch nghĩa "' + word + '"...');
+  // Call Claude API to translate
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 100,
+        messages: [{ role: 'user', content: 'Dịch từ/cụm từ tiếng Anh này sang tiếng Việt, chỉ trả lời nghĩa ngắn gọn (tối đa 8 từ), không giải thích: "' + word + '"' }]
+      })
+    });
+    var data = await res.json();
+    var meaning = data.content && data.content[0] ? data.content[0].text.trim() : '—';
+    var idx = vocabList.findIndex(function(v){ return v.id===id; });
+    if (idx !== -1) { vocabList[idx].meaning = meaning; }
+    persistVocab();
+    renderVocabList();
+    showToast('✅','Đã dịch!','"' + word + '": ' + meaning);
+  } catch(e) {
+    var idx = vocabList.findIndex(function(v){ return v.id===id; });
+    if (idx !== -1) { vocabList[idx].meaning = '—'; }
+    persistVocab();
+    renderVocabList();
+  }
+}
+
+function deleteVocab(id) {
+  vocabList = vocabList.filter(function(v){ return v.id !== id; });
+  persistVocab();
+  renderVocabList();
+}
+
+function renderVocabList() {
+  var listEl = document.getElementById('vocabList');
+  var countEl = document.getElementById('vocabCount');
+  if (!listEl) return;
+  var q = (document.getElementById('vocabSearch')||{value:''}).value.toLowerCase().trim();
+  var filtered = q ? vocabList.filter(function(v){ return v.word.toLowerCase().indexOf(q) !== -1; }) : vocabList;
+  if (countEl) countEl.textContent = vocabList.length + ' từ';
+  if (!filtered.length) {
+    listEl.innerHTML = '<div class="vocab-empty"><div class="ve-icon">' + (q ? '🔍' : '📭') + '</div>' + (q ? 'Không tìm thấy từ "'+q+'"' : 'Chưa có từ nào.<br>Thêm từ phát âm sai để luyện tập!') + '</div>';
+    return;
+  }
+  listEl.innerHTML = filtered.map(function(v) {
+    var d = v.date ? v.date.split('-') : ['','',''];
+    var dateStr = d.length===3 ? d[2]+'/'+d[1]+'/'+d[0] : '';
+    var ipaHtml = v.ipa ? '<span class="vocab-ipa">'+v.ipa+'</span>' : '<span class="vocab-ipa empty">—</span>';
+    var isLoading = v.meaning === '...đang dịch';
+    var meaningHtml = v.meaning ? '<span class="vocab-meaning'+(isLoading?' loading':'')+'">'+v.meaning+'</span>' : '<span class="vocab-meaning empty">—</span>';
+    return '<div class="vocab-item"><span class="vocab-word">' + v.word + '</span>' + ipaHtml + meaningHtml + '<span class="vocab-date">' + dateStr + '</span><button class="vocab-del" onclick="deleteVocab(' + v.id + ')" title="Xóa">✕</button></div>';
+  }).join('');
+}
+
+// ===================== HISTORY =====================
+let history30=JSON.parse(localStorage.getItem('pte_history30'))||{};
+let histViewMonth=new Date(),histSelectedDate=null;
+
+function getTodayDate(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
+
+function setSyncStatus(ok){
+  const d=document.getElementById('syncDot'),l=document.getElementById('syncLabel');
+  if(d)d.className='sync-dot'+(ok?' ok':'');
+  if(l)l.textContent=ok?'Da dong bo':'Offline';
+}
+
+function saveSnapshot(){
+  const dk=getTodayKey();if(!dk)return;
+  const key=getTodayDate();
+  history30[key]={dayKey:dk,checked:JSON.parse(JSON.stringify(checked)),taskNotes:JSON.parse(JSON.stringify(taskNotes)),dayNote:dayNotes[dk]||''};
+  const keys=Object.keys(history30).sort();
+  if(keys.length>31)delete history30[keys[0]];
+}
+
+function changeHistMonth(dir){
+  histViewMonth=new Date(histViewMonth.getFullYear(),histViewMonth.getMonth()+dir,1);
+  histSelectedDate=null;renderHistoryCalendar();
+  document.getElementById('histDetail').innerHTML='<div class="no-history">Chon mot ngay de xem chi tiet</div>';
+}
+
+function renderHistoryCalendar(){
+  const yr=histViewMonth.getFullYear(),mo=histViewMonth.getMonth();
+  const mN=['Thang 1','Thang 2','Thang 3','Thang 4','Thang 5','Thang 6','Thang 7','Thang 8','Thang 9','Thang 10','Thang 11','Thang 12'];
+  document.getElementById('histMonthLabel').textContent=mN[mo]+' '+yr;
+  const cal=document.getElementById('histCalendar');
+  cal.innerHTML=['CN','T2','T3','T4','T5','T6','T7'].map(d=>'<div class="cal-header">'+d+'</div>').join('');
+  const firstDay=new Date(yr,mo,1).getDay();
+  for(let i=0;i<firstDay;i++)cal.innerHTML+='<div class="cal-day empty"></div>';
+  const days=new Date(yr,mo+1,0).getDate(),todayStr=getTodayDate();
+  for(let d=1;d<=days;d++){
+    const ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const snap=history30[ds],isToday=ds===todayStr,isSel=ds===histSelectedDate;
+    let pct=0,dotHtml='',isFull=false;
+    if(snap){
+      const dt=schedule[snap.dayKey]?allTasks(snap.dayKey):[];
+      const tot=dt.length,dn=dt.filter(t=>snap.checked&&snap.checked[t.id]).length;
+      pct=tot?Math.round(dn/tot*100):0;isFull=tot>0&&dn===tot;
+      dotHtml='<div class="cal-dots">'+dt.slice(0,6).map(t=>'<div class="cal-dot '+(snap.checked&&snap.checked[t.id]?'done':'undone')+'"></div>').join('')+'</div>';
+    }
+    cal.innerHTML+='<div class="cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(isFull?' full':'')+'" onclick="selectHistDate(\'' + ds + '\')" ><span class="cal-dn">'+d+'</span>'+(snap?'<span class="cal-pct">'+pct+'%</span>'+dotHtml:'')+'</div>';
+  }
+}
+
+function selectHistDate(ds){histSelectedDate=ds;renderHistoryCalendar();renderHistoryDetail(ds);}
+
+function renderHistoryDetail(ds){
+  const det=document.getElementById('histDetail'),snap=history30[ds];
+  const p=ds.split('-'),dl=p[2]+'/'+p[1]+'/'+p[0];
+  if(!snap){
+    const dow=new Date(ds).getDay(),dk={1:'MON',2:'TUE',3:'WED',4:'THU',5:'FRI'}[dow];
+    det.innerHTML='<div class="hdet-hdr"><h3>'+dl+'</h3><span class="hdet-badge none">'+(dk?'Chua co du lieu':'Cuoi tuan')+'</span></div><div class="no-history">'+(dk?'Chua co du lieu ngay nay.':'Ngay nghi.')+'</div>';
+    return;
+  }
+  const dk=snap.dayKey,dt=schedule[dk]?allTasks(dk):[];
+  const tot=dt.length,dn=dt.filter(t=>snap.checked&&snap.checked[t.id]).length;
+  const pct=tot?Math.round(dn/tot*100):0,isFull=tot>0&&dn===tot;
+  const bc=isFull?'full':dn>0?'partial':'none',bt=isFull?'100% hoan thanh':dn>0?pct+'% hoan thanh':'Chua lam';
+  const dayVN=DAY_CONFIG.find(d=>d.key===dk)?.vn||dk;
+  const mg=schedule[dk]?.morning||[],ev=schedule[dk]?.evening||[];
+  function tr(t){const id=snap.checked&&snap.checked[t.id],nt=snap.taskNotes&&snap.taskNotes[t.id];return '<div class="hist-task-row"><div class="hist-chk '+(id?'done':'undone')+'">'+(id?'v':'')+'</div><div class="hist-name '+(id?'done':'')+'">'+(t.name)+'</div>'+(nt?'<div class="hist-note-tag">'+nt+'</div>':'')+'</div>';}
+  let html='<div class="hdet-hdr"><h3>'+dl+' - '+dayVN+'</h3><span class="hdet-badge '+bc+'">'+bt+'</span></div>';
+  if(mg.length)html+='<div class="hist-session-lbl">Buoi sang</div>'+mg.map(tr).join('');
+  if(ev.length)html+='<div class="hist-session-lbl">Buoi toi</div>'+ev.map(tr).join('');
+  if(snap.dayNote)html+='<div class="hist-session-lbl">Ghi chu</div><div style="padding:12px 20px;font-size:13px;color:var(--text2);line-height:1.6">'+snap.dayNote+'</div>';
+  det.innerHTML=html;
+}
+
+// ===================== INIT =====================
+initDay();
+updateClock();
+setInterval(updateClock,30000);
+updatePomoDisplay();
+renderPomoDots();
+renderAll(); // Render immediately with localStorage data
+
+// ===================== FIREBASE SYNC =====================
+// Called here so all variables (schedule, checked, etc.) are already declared
+(function initFirebase() {
+  function tryConnect() {
+    if (typeof firebase === 'undefined') { setTimeout(tryConnect, 100); return; }
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp({
+          apiKey:"AIzaSyBvP_5SF83shv0Lv06GPdShWPxiPNPocGE",
+          authDomain:"pte-planner.firebaseapp.com",
+          databaseURL:"https://pte-planner-default-rtdb.firebaseio.com",
+          projectId:"pte-planner",
+          storageBucket:"pte-planner.firebasestorage.app",
+          messagingSenderId:"818279959810",
+          appId:"1:818279959810:web:0fcf54578f018f5c52c61b"
+        });
+      }
+      db = firebase.database();
+
+      // Load once on startup
+      db.ref('pte_data').once('value').then(function(snapshot){
+        var data = snapshot.val();
+        if (data) {
+          if(data.schedule)  schedule   = data.schedule;
+          if(data.checked)   checked    = data.checked;
+          if(data.taskNotes) taskNotes  = data.taskNotes;
+          if(data.dayNotes)  dayNotes   = data.dayNotes;
+          if(data.taskDiff)  taskDiff   = data.taskDiff;
+          if(data.history30) history30  = data.history30;
+        }
+        setSyncStatus(true);
+        renderAll();
+      }).catch(function(e){
+        console.warn('Firebase load error:', e);
+        setSyncStatus(false);
+      });
+
+      // Realtime listener — auto sync khi máy khác thay đổi
+      db.ref('pte_data').on('value', function(snapshot){
+        var data = snapshot.val(); if (!data) return;
+        if(data.schedule)  schedule   = data.schedule;
+        if(data.checked)   checked    = data.checked;
+        if(data.taskNotes) taskNotes  = data.taskNotes;
+        if(data.dayNotes)  dayNotes   = data.dayNotes;
+        if(data.taskDiff)  taskDiff   = data.taskDiff;
+        if(data.history30) history30  = data.history30;
+        setSyncStatus(true);
+        renderAll();
+      });
+
+      // Vocab sync
+      db.ref('pte_vocab').once('value').then(function(snap){
+        var v = snap.val(); if(v && Array.isArray(v)) vocabList = v;
+        renderVocabList();
+      }).catch(function(){});
+      db.ref('pte_vocab').on('value', function(snap){
+        var v = snap.val(); if(v && Array.isArray(v)){ vocabList = v; renderVocabList(); }
+      });
+
+    } catch(e) {
+      console.warn('Firebase error:', e.message);
+      setSyncStatus(false);
+    }
+  }
+  tryConnect();
+})();
+</script>
+</body>
+</html>
