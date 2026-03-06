@@ -1383,19 +1383,12 @@ async function addVocab() {
   renderVocabList();
   playSound('note');
   showToast('📖','Đã thêm!','Đang dịch nghĩa "' + word + '"...');
-  // Call Claude API to translate
+  // Dùng Google Translate API miễn phí (không cần key)
   try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 100,
-        messages: [{ role: 'user', content: 'Dịch từ/cụm từ tiếng Anh này sang tiếng Việt, chỉ trả lời nghĩa ngắn gọn (tối đa 8 từ), không giải thích: "' + word + '"' }]
-      })
-    });
+    var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=' + encodeURIComponent(word);
+    var res = await fetch(url);
     var data = await res.json();
-    var meaning = data.content && data.content[0] ? data.content[0].text.trim() : '—';
+    var meaning = data && data[0] && data[0][0] && data[0][0][0] ? data[0][0][0] : '—';
     var idx = vocabList.findIndex(function(v){ return v.id===id; });
     if (idx !== -1) { vocabList[idx].meaning = meaning; }
     persistVocab();
