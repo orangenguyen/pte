@@ -396,8 +396,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .vocab-del{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:3px 6px;border-radius:6px;transition:all .15s;}
 .vocab-del:hover{color:var(--red);background:var(--red-bg);}
 .vocab-ipa-input{font-family:"Plus Jakarta Sans",sans-serif;font-style:italic;color:var(--purple)!important;}
-.vocab-col-hdr{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 80px 36px;gap:8px;padding:8px 20px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
-.vocab-item{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 80px 36px;gap:8px;align-items:center;padding:11px 20px;border-bottom:1px solid var(--border);transition:background .15s;}
+.vocab-col-hdr{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 70px 75px 36px;gap:8px;padding:8px 20px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+.vocab-item{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 70px 75px 36px;gap:8px;align-items:center;padding:11px 20px;border-bottom:1px solid var(--border);transition:background .15s;}
 .vocab-item:last-child{border-bottom:none;}
 .vocab-item:hover{background:var(--bg);}
 .vocab-word{font-size:14px;font-weight:700;color:var(--text);}
@@ -406,6 +406,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .vocab-meaning{font-size:13px;color:var(--text2);font-weight:500;}
 .vocab-meaning.loading{color:var(--muted);font-style:italic;}
 .vocab-meaning.empty{color:var(--border2);}
+.vocab-type{font-size:10px;font-weight:800;border-radius:6px;padding:2px 8px;white-space:nowrap;}
+.vt-noun{background:#EFF6FF;color:#3B82F6;}
+.vt-verb{background:#F0FDF4;color:#16A34A;}
+.vt-adjective{background:#FFF7ED;color:#EA580C;}
+.vt-adverb{background:#FAF5FF;color:#9333EA;}
+.vt-phrase{background:#FFF1F2;color:#E11D48;}
+.vt-unknown{background:#F3F4F6;color:#6B7280;}
+.vocab-speak{background:none;border:1.5px solid var(--border);border-radius:8px;font-size:14px;cursor:pointer;padding:3px 7px;transition:all .15s;flex-shrink:0;}
+.vocab-speak:hover{background:var(--green-bg);border-color:var(--green);}
 .vocab-date{font-size:11px;color:var(--muted);font-weight:500;}
 .vocab-del{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:3px 6px;border-radius:6px;transition:all .15s;justify-self:center;}
 .vocab-del:hover{color:var(--red);background:var(--red-bg);}
@@ -554,6 +563,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <span>Từ / Cụm từ</span>
           <span>Phiên âm</span>
           <span>Nghĩa tiếng Việt</span>
+          <span>Loại từ</span>
           <span>Ngày thêm</span>
           <span></span>
         </div>
@@ -1376,7 +1386,8 @@ async function addVocab() {
   var ipa = ipaInp ? ipaInp.value.trim() : '';
   var today = getTodayDate();
   var id = Date.now();
-  vocabList.unshift({ word: word, ipa: ipa, meaning: '...đang dịch', date: today, id: id });
+  var wordType = guessWordType(word);
+  vocabList.unshift({ word: word, ipa: ipa, meaning: '...đang dịch', wordType: wordType, date: today, id: id });
   inp.value = '';
   if (ipaInp) ipaInp.value = '';
   persistVocab();
@@ -1408,6 +1419,28 @@ function deleteVocab(id) {
   renderVocabList();
 }
 
+function speakVocab(word) {
+  // Google TTS
+  var url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=' + encodeURIComponent(word);
+  var audio = new Audio(url);
+  audio.play().catch(function() {
+    // Fallback browser TTS
+    var utt = new SpeechSynthesisUtterance(word);
+    utt.lang = 'en-US'; utt.rate = 0.9;
+    speechSynthesis.speak(utt);
+  });
+}
+
+function guessWordType(word) {
+  var w = word.toLowerCase().trim();
+  if (w.includes(' ')) return 'phrase';
+  if (/ly$/.test(w)) return 'adverb';
+  if (/tion$|ness$|ment$|ity$|ance$|ence$|ship$|hood$/.test(w)) return 'noun';
+  if (/ful$|less$|ous$|ive$|able$|ible$|al$|ic$/.test(w)) return 'adjective';
+  if (/ize$|ise$|ify$|ate$/.test(w)) return 'verb';
+  return 'unknown';
+}
+
 function renderVocabList() {
   var listEl = document.getElementById('vocabList');
   var countEl = document.getElementById('vocabCount');
@@ -1425,7 +1458,10 @@ function renderVocabList() {
     var ipaHtml = v.ipa ? '<span class="vocab-ipa">'+v.ipa+'</span>' : '<span class="vocab-ipa empty">—</span>';
     var isLoading = v.meaning === '...đang dịch';
     var meaningHtml = v.meaning ? '<span class="vocab-meaning'+(isLoading?' loading':'')+'">'+v.meaning+'</span>' : '<span class="vocab-meaning empty">—</span>';
-    return '<div class="vocab-item"><span class="vocab-word">' + v.word + '</span>' + ipaHtml + meaningHtml + '<span class="vocab-date">' + dateStr + '</span><button class="vocab-del" onclick="deleteVocab(' + v.id + ')" title="Xóa">✕</button></div>';
+    var typeLabels = {noun:'Danh từ',verb:'Động từ',adjective:'Tính từ',adverb:'Trạng từ',phrase:'Cụm từ',unknown:'Từ'};
+    var wt = v.wordType || 'unknown';
+    var typeHtml = '<span class="vocab-type vt-'+wt+'">'+(typeLabels[wt]||wt)+'</span>';
+    return '<div class="vocab-item"><span class="vocab-word">' + v.word + '</span>' + ipaHtml + meaningHtml + typeHtml + '<span class="vocab-date">' + dateStr + '</span><div style="display:flex;gap:4px;justify-self:center;align-items:center;"><button class="vocab-speak" onclick="speakVocab(\'' + v.word + '\')" title="Nghe">🔊</button><button class="vocab-del" onclick="deleteVocab(' + v.id + ')" title="Xóa">✕</button></div></div>';
   }).join('');
 }
 
