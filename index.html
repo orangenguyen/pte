@@ -85,14 +85,14 @@ header{background:var(--grad2);padding:16px 0;position:sticky;top:0;z-index:200;
 
 /* TASK */
 .task-item{}
-.task-row{display:flex;align-items:center;padding:10px 20px;gap:8px;cursor:pointer;transition:all .12s;border-left:3px solid transparent;min-height:52px;}
+.task-row{display:grid;grid-template-columns:24px 1fr auto auto auto auto;align-items:center;padding:10px 20px;gap:8px;cursor:pointer;transition:all .12s;border-left:3px solid transparent;min-height:52px;}
 .task-row:hover{background:var(--bg);border-left-color:var(--border2);}
 .task-item.done .task-row{border-left-color:var(--green);}
 .chk{width:20px;height:20px;border:2px solid var(--border2);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s;background:white;}
 .chk::after{content:'✓';font-size:12px;font-weight:800;color:white;opacity:0;transition:opacity .18s;}
 .task-item.done .chk{background:var(--grad);border-color:var(--purple);box-shadow:0 0 0 3px rgba(124,58,237,.2);}
 .task-item.done .chk::after{opacity:1;}
-.ti{flex:1;min-width:0;}
+.ti{min-width:0;}
 .tn{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tn.star{color:var(--blue);}
 .task-item.done .tn{color:var(--muted);text-decoration:line-through;font-weight:400;}
@@ -101,13 +101,17 @@ header{background:var(--grad2);padding:16px 0;position:sticky;top:0;z-index:200;
 .badge{font-size:11px;padding:1px 7px;border-radius:5px;background:var(--bg2);color:var(--text2);font-weight:500;border:1px solid var(--border);}
 
 /* NOTE BTN */
-.note-btn{background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:0 10px;height:30px;line-height:1;display:inline-flex;align-items:center;gap:3px;transition:all .16s;flex-shrink:0;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;}
+.task-edit-btn{background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;padding:0;width:32px;height:30px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:all .16s;flex-shrink:0;font-family:'Plus Jakarta Sans',sans-serif;}
+.task-edit-btn:hover{border-color:var(--blue);background:var(--blue-l);}
+.task-count-badge{font-size:12px;font-weight:800;color:var(--purple);background:var(--blue-l);border:1.5px solid var(--blue-m);border-radius:8px;padding:0 8px;height:30px;min-width:36px;line-height:1;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;cursor:default;flex-shrink:0;}
+.task-timer-btn{background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;padding:0 8px;height:30px;min-width:58px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:all .16s;flex-shrink:0;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;}
+.task-timer-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+.task-timer-btn.active{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+.note-btn{background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:0 10px;height:30px;min-width:68px;line-height:1;display:inline-flex;align-items:center;justify-content:center;gap:3px;transition:all .16s;flex-shrink:0;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;}
 .note-btn:hover{border-color:var(--orange);color:var(--orange);background:var(--orange-bg);}
 .note-btn.has-note{border-color:var(--orange-b);color:var(--orange);background:var(--orange-bg);}
 
 /* EDIT TASK INLINE */
-.task-edit-btn{background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;padding:0 10px;height:30px;line-height:1;display:inline-flex;align-items:center;transition:all .16s;flex-shrink:0;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;}
-.task-edit-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l);}
 .task-edit-area{max-height:0;overflow:hidden;transition:max-height .32s ease;}
 .task-edit-area.open{max-height:200px;}
 .task-edit-inner{padding:10px 20px 14px 51px;background:var(--blue-l);border-top:1px dashed var(--border);}
@@ -303,10 +307,6 @@ header{background:var(--grad2);padding:16px 0;position:sticky;top:0;z-index:200;
 .btn-timer-pause{background:var(--yellow-bg);color:var(--yellow);border:1.5px solid #FDE68A;}
 .btn-timer-reset{background:var(--bg2);color:var(--muted);border:1.5px solid var(--border);}
 .btn-timer-reset:hover{color:var(--red);border-color:var(--red);}
-.task-timer-btn{background:none;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;padding:0 10px;height:30px;line-height:1;display:inline-flex;align-items:center;transition:all .16s;flex-shrink:0;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;min-width:58px;justify-content:center;}
-.task-timer-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-bg);}
-.task-count-badge{font-size:12px;font-weight:800;color:var(--purple);background:var(--blue-l);border:1.5px solid var(--blue-m);border-radius:8px;padding:0 10px;height:30px;line-height:1;display:inline-flex;align-items:center;white-space:nowrap;cursor:default;flex-shrink:0;}
-.task-timer-btn.active{border-color:var(--green);color:var(--green);background:var(--green-bg);}
 .task-item.timing .task-row{border-left-color:var(--green)!important;}
 
 /* ====== FEEDBACK TAB ====== */
@@ -388,8 +388,8 @@ header{background:var(--grad2);padding:16px 0;position:sticky;top:0;z-index:200;
 .vocab-list-hdr{padding:14px 20px;background:linear-gradient(135deg,var(--bg2),var(--blue-l));border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .vocab-list-hdr h3{font-size:14px;font-weight:800;}
 .vocab-count{font-size:12px;font-weight:700;color:var(--purple);background:var(--blue-l);border:1.5px solid var(--blue-m);border-radius:100px;padding:3px 12px;}
-.vocab-col-hdr{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 70px 75px 36px;gap:8px;padding:8px 20px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
-.vocab-item{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 70px 75px 36px;gap:8px;align-items:center;padding:11px 20px;border-bottom:1px solid var(--border);transition:background .15s;}
+.vocab-col-hdr{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 80px 80px 90px;gap:8px;padding:8px 20px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+.vocab-item{display:grid;grid-template-columns:1.2fr 1fr 1.2fr 80px 80px 90px;gap:8px;align-items:center;padding:11px 20px;border-bottom:1px solid var(--border);transition:background .15s;}
 .vocab-item:last-child{border-bottom:none;}
 .vocab-item:hover{background:var(--bg);}
 .vocab-word{font-size:14px;font-weight:700;color:var(--text);}
@@ -1013,7 +1013,7 @@ function taskHTML(t){
   const meta=formatTaskMeta(t.detail, t.time);
 
   const noteBody=hasNote
-    ?`<div class="saved-note" id="note-display-${t.id}"><span style="flex:1">${esc(note)}</span><div class="nact"><button class="nedit" onclick="editNote('${t.id}')">Sửa</button><button class="ndel" onclick="delNote('${t.id}')">Xóa</button></div></div>`
+    ?`<div class="saved-note" id="note-display-${t.id}"><span style="flex:1">${esc(note)}</span><div class="nact"><button class="nedit" onclick="editNote('${t.id}')">✏️</button><button class="ndel" onclick="delNote('${t.id}')">Xóa</button></div></div>`
     :`<div class="niw" id="note-input-${t.id}"><textarea class="note-ta" id="note-text-${t.id}" placeholder="Còn bao nhiêu câu chưa làm? Lý do? Ghi lại để nhớ…"></textarea><button class="nsave" onclick="saveNote('${t.id}')">Lưu</button></div>`;
 
   const editArea=`
@@ -1054,7 +1054,7 @@ function taskHTML(t){
           </div>`:''}
         </div>
 
-        <button class="task-edit-btn" onclick="event.stopPropagation();toggleEdit('${t.id}')">Sửa</button>
+        <button class="task-edit-btn" onclick="event.stopPropagation();toggleEdit('${t.id}')">✏️</button>
         ${getTaskCount(t)?`<span class="task-count-badge" onclick="event.stopPropagation()">${getTaskCount(t)}</span>`:''}
         <button class="task-timer-btn${timerState&&timerState.openUI?' active':''}" onclick="event.stopPropagation();toggleTimerUI('${t.id}')">${timerStr}</button>
         <button class="note-btn${hasNote?' has-note':''}" data-id="${t.id}">${hasNote?'Có ghi chú':'Ghi chú'}</button>
